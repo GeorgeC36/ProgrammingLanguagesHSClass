@@ -246,43 +246,43 @@ someTuple = (9, "Thursday")
 
 In order to have words, numbers, etc. appear in the console, use the function `print()`.
 
-KeyWords | Description
--------- | -----------
-var | Define a variable
-const | Define a constant
-if | Conditional
-else | Introduces alternate condition for an if statement
-switch | Conditional
-case | Identifies each choice in a switch statement
-func | Begins a function
-for | Begins a for loop
-for-in | Begins a for loop over set interval
-while | Begins a while loop
-+ | Adds together two values
-- | Subtracts one value from another
-* | Multiplies two values
-/ | Divides one value by another
-^ | Raises one value to another
-% | Returns the division remainder
-++ | Increases the value of a variable by 1
--- | Decreases the value of a variable by 1
-= | Equals the value after this symbol
-+= | Adds the value before the symbol to the value after the symbol
--= | Subtracts the value after the symbol from the value before the symbol
-*= | Multiplies the value before the symbol with the value after the symbol
-/= | Divides the value before the symbol by the value after the symbol
-^= | Raises the value before the symbol to the value after the symbol
-== | Equal to comparator
-!= | Not equal to comparator
-\> , greaterthan | Greater than comparator
-< , lessthan | Less than comparator
-\>= , greaterthanequal | Greater than or equal to comparator
-<= , lessthanequal | Less than or equal to comparator
-&& , and | Returns true if both statements are true
-&#124;&#124; , or | Returns true if one of the statements is true
-! , not | Reverse the result, returns false if the result is true
-// | Comment
-/* | Start of section comment
-*/ | End of section comment
+| KeyWords | Description |
+| -------- | ----------- |
+| var | Define a variable | 
+| const | Define a constant |
+| if | Conditional |
+| else | Introduces alternate condition for an if statement |
+| switch | Conditional |
+| case | Identifies each choice in a switch statement |
+| func | Begins a function |
+| for | Begins a for loop |
+| for-in | Begins a for loop over set interval |
+| while | Begins a while loop |
+| + | Adds together two values |
+| - | Subtracts one value from another |
+| * | Multiplies two values |
+| / | Divides one value by another |
+| ^ | Raises one value to another |
+| % | Returns the division remainder |
+| ++ | Increases the value of a variable by 1 |
+| -- | Decreases the value of a variable by 1 |
+| = | Equals the value after this symbol |
+| += | Adds the value before the symbol to the value after the symbol |
+| -= | Subtracts the value after the symbol from the value before the symbol |
+| *= | Multiplies the value before the symbol with the value after the symbol |
+| /= | Divides the value before the symbol by the value after the symbol |
+| ^= | Raises the value before the symbol to the value after the symbol |
+| == | Equal to comparator |
+| != | Not equal to comparator |
+| \> , greaterthan | Greater than comparator |
+| < , lessthan | Less than comparator |
+| \>= , greaterthanequal | Greater than or equal to comparator |
+| <= , lessthanequal | Less than or equal to comparator |
+| && , and | Returns true if both statements are true |
+| &#124;&#124; , or | Returns true if one of the statements is true |
+| ! , not | Reverse the result, returns false if the result is true |
+| // | Comment |
+| /* | Start of section comment |
+| */ | End of section comment |
 
 

@@ -279,8 +279,8 @@ while | Begins a while loop
 \>= , greaterthanequal | Greater than or equal to comparator
 <= , lessthanequal | Less than or equal to comparator
 && , and | Returns true if both statements are true
-&#124;&#124; , or  | Returns true if one of the statements is true
-! , not  | Reverse the result, returns false if the result is true
+&#124;&#124; , or | Returns true if one of the statements is true
+! , not | Reverse the result, returns false if the result is true
 // | Comment
 /* | Start of section comment
 */ | End of section comment

@@ -245,8 +245,13 @@ someTuple = (9, "Thursday")
 # Built-In Functions
 
 In order to have words, numbers, etc. appear in the console, use the function `print()`.
+<br />When using arrays use the function `size()` to find how big the array is.
+<br />For Strings use `length()` to determine how many characters long the string is.
+<br />Use `random()` to get a random value from 0 to 1.
 
-| KeyWords | Description |
+# List of all Keywords and Operators
+
+| Keywords | Description |
 | -------- | ----------- |
 | var | Define a variable | 
 | const | Define a constant |

@@ -1,0 +1,132 @@
+// George Corbin github.com/GeorgeCorbin/Programming-Languages/blob/main/Z/README.md
+
+program ::= statementList?
+
+statementList ::= statement*
+
+statement ::= expression
+        | initialization
+        | assignment
+        | functionDefinition
+        | loop
+        | conditional
+
+expression ::= primary
+		| unary
+		| binary
+
+expressionList ::= expression
+                | expression "," expressionList
+
+primary ::= IDENTIFIER | literal | grouping | functionCall | arrayReference | tupleElementReference
+
+tupleElementReference ::= tupleExpression "." NUMBER
+                        | tupleExpression "." IDENTIFIER
+
+tupleExpression ::= "(" tupleList ")"
+
+tupleList ::= tupleValue
+            | tupleValue "," tupleList
+
+tupleValue ::= [ IDENTIFIER ":" ] expression
+
+arrayReference ::= IDENTIFIER "[" expression "]"
+
+dataType ::= "String" | "int" | "float" | arrayType
+
+arrayType ::= "[" dataType "]"
+
+literal ::= NUMBER | booleanLiteral | STRING
+
+booleanLiteral ::= "true" | "false"
+
+unary ::= prefixUnaryOperators expression
+        | incrementExpression
+
+incrementExpression ::= IDENTIFIER incrementOperators
+                        | incrementOperators IDENTIFIER
+
+prefixUnaryOperators ::= "+" | "-" | "not" | "!"
+
+incrementOperators ::= "++" | "--"
+
+binary ::= expression binaryOperator expression
+
+binaryOperator ::= comparator | mathematicalOperator
+
+comparator ::= ">" | "greaterthan" | ">=" | "greaterthanequal" | "<" | "lessthan" | "<=" | "lessthanequal" | "!=" | "notequal"
+
+mathematicalOperator ::= "+" | "-" | "*" | "/" | "^" | "%"
+
+functionDefinition ::= "func" IDENTIFIER "(" functionParameterList? ")" ["->" functionReturnType] "{" statementList "}"
+
+functionParameterList ::= functionParameter ["," functionParameterList]
+
+functionParameter ::= IDENTIFIER ":" dataType
+
+functionReturnType ::= dataType | "Void"
+
+functionCall ::= IDENTIFIER "(" argumentList? ")"
+
+argumentList ::= [IDENTIFIER ":"] expression [ "," argumentList ]
+
+grouping ::= "(" expression ")"
+
+initialization ::= variableInitializer | constantInitializer
+
+variableInitializer ::= "var" IDENTIFIER ":" dataType
+                    | "var" IDENTIFIER ":" dataType "=" initializerExpression
+                    | "var" IDENTIFIER "=" initializerExpression
+
+constantInitializer ::= "const" IDENTIFIER [":" dataType] "=" initializerExpression
+
+initializerExpression ::= expression | arrayInitializer
+
+arrayInitializer ::= "[" expressionList? "]"
+
+assignment ::= IDENTIFIER assignmentOperator expression
+
+assignmentOperator ::= "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "^="
+
+loop ::= forLoop | forIn | whileLoop
+
+forLoop ::= "for" "(" assignment? ";" booleanExpression? ";" loopIncrement? ")" "{" statementList "}"
+
+loopIncrement ::= assignment | incrementExpression
+
+booleanExpression ::= unaryBoolean | simpleBoolean | binaryBoolean
+
+unaryBoolean ::= IDENTIFIER | booleanLiteral | "not" booleanExpression | "!" booleanExpression | "(" booleanExpression ")"
+
+simpleBoolean ::= expression comparator expression
+
+binaryBoolean ::= booleanExpression conjunction booleanExpression
+
+conjunction ::= "&&" | "and" | "||" | "or"
+
+forIn ::= "for" IDENTIFIER "in" iterable "{" statementList "}"
+
+iterable ::= range | IDENTIFIER
+
+range ::= expression "..." expression
+
+whileLoop ::= "while" "(" booleanExpression ")" "{" statementList "}"
+
+conditional ::= ifElseStatements | switchCaseStatements
+
+ifElseStatements ::= ifStatement elseifStatement* elseStatement?
+
+ifStatement ::= "if" "(" booleanExpression ")" "{" statementList "}"
+            | "if" booleanExpression "{" statementList "}"
+
+elseStatement ::= "else" "{" statementList "}"
+
+elseifStatement ::= "else" ifStatement
+
+switchCaseStatements ::= switchStatement "{" caseStatement+ "}"
+
+switchStatement ::= "switch" "(" expression ")"
+                | "switch" expression
+
+caseStatement ::= "case" expression ":" statementList
+                | "default" ":" statementList

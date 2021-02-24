@@ -54,7 +54,7 @@ binary ::= expression binaryOperator expression
 
 binaryOperator ::= comparator | mathematicalOperator
 
-comparator ::= ">" | "greaterthan" | ">=" | "greaterthanequal" | "<" | "lessthan" | "<=" | "lessthanequal" | "!=" | "notequal"
+comparator ::= ">" | "greaterthan" | ">=" | "greaterthanequal" | "<" | "lessthan" | "<=" | "lessthanequal" | "!=" | "notequal" | "==" | "equals"
 
 mathematicalOperator ::= "+" | "-" | "*" | "/" | "^" | "%"
 

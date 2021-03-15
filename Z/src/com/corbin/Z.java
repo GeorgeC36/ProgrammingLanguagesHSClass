@@ -49,4 +49,8 @@ public class Z {
     private static boolean singlePathProvided(String[] args) {
         return args.length == 1;
     }
+
+    public static void error(int lineNumber, String message) {
+        System.out.println("Cmon Man You Messed Up: " + message + " on line: " + lineNumber);
+    }
 }

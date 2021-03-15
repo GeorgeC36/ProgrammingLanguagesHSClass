@@ -137,32 +137,58 @@ public class Lexer {
                 return new Lexeme(TokenType.CLOSEBRACKET, lineNumber);
             case '=':
                 return new Lexeme(TokenType.ASSIGN, lineNumber);
+            case ',':
+                return new Lexeme(TokenType.COMMA, lineNumber);
+            case ':':
+                return new Lexeme(TokenType.COLON, lineNumber);
+            case ';':
+                return new Lexeme(TokenType.SEMICOLON, lineNumber);
+
+
+            // Strictly-Two Character Tokens
+            case '|':
+                if (match('|')) return new Lexeme(TokenType.OR, lineNumber);
+                else Z.error(lineNumber, "Missing second '|'");
+                break;
+            case '&':
+                if (match('&')) return new Lexeme(TokenType.AND, lineNumber);
+                else Z.error(lineNumber, "Missing second '&'");
+                break;
+
+            // Strictly-Three Character Tokens
+            case '.':
+                if (match('.') && match('.')) return new Lexeme(TokenType.ELLIPSIS, lineNumber);
+                else Z.error(lineNumber, "Found '.' but not a complete ellipsis.");
+                break;
+
+
+            // One- Or Two-Character Tokens
             case '>':
                 return new Lexeme(TokenType.GREATER, lineNumber);
             case '<':
                 return new Lexeme(TokenType.LESS, lineNumber);
-
-            // Strictly-Two Character Tokens
-            case '|':
-                if (match('|')) return new Lexeme(DOUBLE_PIPE, lineNumber);
-                else Z.error(lineNumber, "Missing second '|");
-                break;
-
-            // One- Or Two-Character Tokens
             case '*':
                 return new Lexeme(match('=') ? TokenType.TIMESASSIGN : TokenType.TIMES, lineNumber);
             case '/':
                 return new Lexeme(match('=') ? TokenType.DIVIDEASSIGN : TokenType.DIVIDE, lineNumber);
-            case '&':
-                return new Lexeme(match('&') ? TokenType.AND : TokenType.AND, lineNumber);
-//            case '!':
-//                return new Lexeme(match('!') ? TIMES_EQUAL : TokenType.BANG, lineNumber);
-            case '+':
-                return new Lexeme(match('+') ? TokenType.PLUSASSIGN : TokenType.PLUS, lineNumber);
-//                if (match('+')) return new Lexeme(TokenType.PLUSASSIGN, lineNumber);
-//                else return new Lexeme(TokenType.PLUS, lineNumber);
+            case '^':
+                return new Lexeme(match('=') ? TokenType.EXPASSIGN : TokenType.EXP, lineNumber);
+            case '%':
+                return new Lexeme(match('=') ? TokenType.MODASSIGN : TokenType.MOD, lineNumber);
 
-            // Strings
+            case '!':
+                return new Lexeme(match('=') ? TokenType.NOTEQUAL : TokenType.NOT, lineNumber);
+            case '+':
+                if (match('+')) return new Lexeme(TokenType.INCREMENT, lineNumber);
+                else if (match('+')) return new Lexeme(TokenType.PLUSASSIGN, lineNumber);
+                else return new Lexeme(TokenType.PLUS, lineNumber);
+            case '-':
+                if (match('-')) return new Lexeme(TokenType.DECREMENT, lineNumber);
+                else if (match('=')) return new Lexeme(TokenType.MINUSASSIGN, lineNumber);
+                else if (match('>')) return new Lexeme(TokenType.RETURNS, lineNumber);
+                else return new Lexeme(TokenType.MINUS, lineNumber);
+
+                // Strings
             case '"':
                 return lexString();
 
@@ -171,6 +197,7 @@ public class Lexer {
                 else if (isAlpha(c)) return lexIdentifierOrKeyword();
                 else Z.error(lineNumber, "Unexpected character: " + c);
         }
+        return null;
     }
 
     private Lexeme lexNumber() {
@@ -197,8 +224,11 @@ public class Lexer {
         }
     }
 
-    private Lexeme lexString() {    // TODO
-        return new Lexeme(TokenType.STRING, lineNumber);
+    private Lexeme lexString() {
+        while (peek() != '"') advance();
+        String charString = source.substring(startOfCurrentLexeme + 1, currentPosition);
+        currentPosition++;
+        return new Lexeme(TokenType.STRING, charString, lineNumber);
     }
 
 

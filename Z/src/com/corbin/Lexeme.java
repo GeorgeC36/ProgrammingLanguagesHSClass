@@ -66,8 +66,8 @@ public class Lexeme {
 
     public String toString() {
         return ("Type = " + type + ", Line Number = " + lineNumber
-                + intValue == null ? "" : ("Integer Value = " + intValue)
-                + floatValue == null ? "" : ("Float Value = " + floatValue)
-                + stringValue == null ? "" : ("String Value = " + stringValue));
+                + (intValue == null ? "" : (", Integer Value = " + intValue))
+                + (floatValue == null ? "" : (", Float Value = " + floatValue))
+                + (stringValue == null ? "" : (", String Value = " + stringValue)));
     }
 }

@@ -17,6 +17,9 @@ public enum TokenType {
     OPENPAREN, CLOSEPAREN, OPENBRACE, CLOSEBRACE, COMMA, COLON, SEMICOLON,
     OPENBRACKET, CLOSEBRACKET,
 
+    // Comments
+    LINECOMMENT,
+
     // End of file
     EOF
 }

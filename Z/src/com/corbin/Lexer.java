@@ -40,11 +40,11 @@ public class Lexer {
         keywords.put("or", TokenType.OR);
         keywords.put("not", TokenType.NOT);
         keywords.put("notequal", TokenType.NOTEQUAL);
-        keywords.put("greater", TokenType.GREATER);
-        keywords.put("greaterequal", TokenType.GREATEREQUAL);
-        keywords.put("less", TokenType.LESS);
-        keywords.put("lessequal", TokenType.LESSEQUAL);
-        keywords.put("equal", TokenType.EQUAL);
+        keywords.put("greaterthan", TokenType.GREATER);
+        keywords.put("greaterthanequal", TokenType.GREATEREQUAL);
+        keywords.put("lessthan", TokenType.LESS);
+        keywords.put("lessthanequal", TokenType.LESSEQUAL);
+        keywords.put("equals", TokenType.EQUAL);
 
         keywords.put("func", TokenType.FUNC);
         keywords.put("void", TokenType.VOID);
@@ -111,7 +111,7 @@ public class Lexer {
         return lexemes;
     }
 
-    private Lexeme getNextLexeme() {    // TODO
+    private Lexeme getNextLexeme() {
         char c = advance();
 
         switch (c) {
@@ -136,7 +136,7 @@ public class Lexer {
             case ']':
                 return new Lexeme(TokenType.CLOSEBRACKET, lineNumber);
             case '=':
-                return new Lexeme(TokenType.ASSIGN, lineNumber);
+                return new Lexeme(match('=') ? TokenType.EQUAL : TokenType.ASSIGN, lineNumber);
             case ',':
                 return new Lexeme(TokenType.COMMA, lineNumber);
             case ':':
@@ -155,6 +155,7 @@ public class Lexer {
                 else Z.error(lineNumber, "Missing second '&'");
                 break;
 
+
             // Strictly-Three Character Tokens
             case '.':
                 if (match('.') && match('.')) return new Lexeme(TokenType.ELLIPSIS, lineNumber);
@@ -164,13 +165,17 @@ public class Lexer {
 
             // One- Or Two-Character Tokens
             case '>':
-                return new Lexeme(TokenType.GREATER, lineNumber);
+                return new Lexeme(match('=') ? TokenType.GREATEREQUAL : TokenType.GREATER, lineNumber);
             case '<':
-                return new Lexeme(TokenType.LESS, lineNumber);
+                return new Lexeme(match('=') ? TokenType.LESSEQUAL : TokenType.LESS, lineNumber);
             case '*':
                 return new Lexeme(match('=') ? TokenType.TIMESASSIGN : TokenType.TIMES, lineNumber);
             case '/':
-                return new Lexeme(match('=') ? TokenType.DIVIDEASSIGN : TokenType.DIVIDE, lineNumber);
+                if (match('/')) {
+                    while (!isAtEnd() && peek() != '\n' && peek() != '\r') advance();
+                    return new Lexeme(TokenType.LINECOMMENT, lineNumber);
+                } else if (match('=')) return new Lexeme(TokenType.DIVIDEASSIGN, lineNumber);
+                else return new Lexeme(TokenType.DIVIDE, lineNumber);
             case '^':
                 return new Lexeme(match('=') ? TokenType.EXPASSIGN : TokenType.EXP, lineNumber);
             case '%':
@@ -180,7 +185,7 @@ public class Lexer {
                 return new Lexeme(match('=') ? TokenType.NOTEQUAL : TokenType.NOT, lineNumber);
             case '+':
                 if (match('+')) return new Lexeme(TokenType.INCREMENT, lineNumber);
-                else if (match('+')) return new Lexeme(TokenType.PLUSASSIGN, lineNumber);
+                else if (match('=')) return new Lexeme(TokenType.PLUSASSIGN, lineNumber);
                 else return new Lexeme(TokenType.PLUS, lineNumber);
             case '-':
                 if (match('-')) return new Lexeme(TokenType.DECREMENT, lineNumber);
@@ -224,10 +229,11 @@ public class Lexer {
         }
     }
 
+    // Collect a string and include its value in the Lexeme
     private Lexeme lexString() {
         while (peek() != '"') advance();
         String charString = source.substring(startOfCurrentLexeme + 1, currentPosition);
-        currentPosition++;
+        currentPosition++;  // Consume the ending quote
         return new Lexeme(TokenType.STRING, charString, lineNumber);
     }
 

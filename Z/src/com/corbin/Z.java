@@ -35,6 +35,7 @@ public class Z {
         Lexer lexer = new Lexer(sourceCode);
         ArrayList<Lexeme> lexemes = lexer.lex();
         printLexemes(lexemes);
+        NuRecognizer recognizer = new NuRecognizer(lexemes);
     }
 
     private static void printLexemes(ArrayList<Lexeme> lexemes) {
@@ -52,5 +53,18 @@ public class Z {
 
     public static void error(int lineNumber, String message) {
         System.out.println("Cmon Man You Messed Up: " + message + " on line: " + lineNumber);
+    }
+
+    public static void error(Lexeme lexeme, String message) {
+        if (lexeme.getType() == TokenType.EOF) {
+            report(lexeme.getLineNumber(), "at end of file", message);
+        } else {
+            report(lexeme.getLineNumber(), "at '" + lexeme + "'", message);
+        }
+    }
+
+    private static void report(int lineNumber, String where, String message) {
+        System.err.println("[line " + lineNumber + "] Error " + where + ": " + message);
+        hadSyntaxError = true;
     }
 }

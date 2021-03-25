@@ -74,6 +74,7 @@ public class Lexer {
         if (isAtEnd() || source.charAt(currentPosition) != expected) return false;
         currentPosition++;
         return true;
+        
     }
 
     private char advance() {

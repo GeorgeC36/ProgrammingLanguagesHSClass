@@ -58,9 +58,9 @@ public class NuRecognizer {
     }
 
     private boolean statementPending() {
-        return expressionPending()
+        return assignmentPending()
                 || initializationPending() 
-                || assignmentPending() 
+                || expressionPending()
                 || functionDefinitionPending()
                 || loopPending()
                 || conditionalPending();
@@ -71,36 +71,31 @@ public class NuRecognizer {
     }
 
     private boolean switchCaseStatementsPending() {
-        return switchStatementPending() && check(OPENBRACE) && caseStatementPending() && check(CLOSEBRACE);
+        return switchStatementPending();
     }
 
     private boolean caseStatementPending() {
-        return check(CASE) && expressionPending() && check(COLON) && statementListPending()
-                || check(DEFAULT) && check(COLON) && statementListPending();
+        return check(CASE) || check(DEFAULT);
     }
 
     private boolean switchStatementPending() {
-        return check(SWITCH) && check(OPENPAREN) && expressionPending() && check(CLOSEPAREN)
-                || check(SWITCH) && expressionPending();
+        return check(SWITCH);
     }
 
     private boolean ifElseStatementsPending() {
-        return ifStatementPending() && elseIfStatementPending() && elseStatementPending()
-                || ifStatementPending() && elseStatementPending()
-                || ifStatementPending();
+        return ifStatementPending();
     }
 
     private boolean elseStatementPending() {
-        return check(ELSE) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE);
+        return check(ELSE) && check(OPENBRACE);
     }
 
     private boolean elseIfStatementPending() {
-        return check(ELSE) && ifStatementPending();
+        return check(ELSE) && !checkNext(OPENBRACE);
     }
 
     private boolean ifStatementPending() {
-        return check(IF) && check(OPENPAREN) && booleanExpressionPending() && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE)
-                || check(IF) && booleanExpressionPending() && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE);
+        return check(IF);
     }
 
     private boolean loopPending() {
@@ -110,11 +105,11 @@ public class NuRecognizer {
     }
 
     private boolean whileLoopPending() {
-        return check(WHILE) && check(OPENPAREN) && booleanExpressionPending() && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE);
+        return check(WHILE);
     }
 
     private boolean forInPending() {
-        return check(FOR) && check(IDENTIFIER) && check(IN) && iterablePending() && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE);
+        return check(FOR) && check(IDENTIFIER);
     }
 
     private boolean iterablePending() {
@@ -122,17 +117,11 @@ public class NuRecognizer {
     }
 
     private boolean rangePending() {
-        return expressionPending() && check(ELLIPSIS) && expressionPending();
+        return expressionPending() && check(ELLIPSIS);
     }
 
     private boolean forLoopPending() {
-        return check(FOR) && check(OPENPAREN) && assignmentPending() && check(SEMICOLON) && booleanExpressionPending() && check(SEMICOLON) && loopIncrementPending() && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE)
-            || check(FOR) && check(OPENPAREN) && booleanExpressionPending() && check(SEMICOLON) && loopIncrementPending() && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE)
-            || check(FOR) && check(OPENPAREN) && assignmentPending() && check(SEMICOLON) && loopIncrementPending() && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE)
-            || check(FOR) && check(OPENPAREN) && assignmentPending() && check(SEMICOLON) && booleanExpressionPending() && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE)
-            || check(FOR) && check(OPENPAREN) && assignmentPending() && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE)
-            || check(FOR) && check(OPENPAREN) && booleanExpressionPending() && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE)
-            || check(FOR) && check(OPENPAREN) && loopIncrementPending() && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE);
+        return check(FOR) && check(OPENPAREN);
     }
 
     private boolean loopIncrementPending() {
@@ -146,7 +135,7 @@ public class NuRecognizer {
     }
 
     private boolean binaryBooleanPending() {
-        return booleanExpressionPending() && conjunctionPending() && booleanExpressionPending();
+        return booleanExpressionPending() && conjunctionPending();
     }
 
     private boolean conjunctionPending() {
@@ -154,21 +143,18 @@ public class NuRecognizer {
     }
 
     private boolean simpleBooleanPending() {
-        return expressionPending() && comparatorPending() && expressionPending();
+        return expressionPending() && comparatorPending();
     }
 
     private boolean unaryBooleanPending() {
-        return check(IDENTIFIER)
-                || booleanLiteralPending()
-                || check(NOT) && booleanExpressionPending()
-                || check(OPENPAREN) && booleanExpressionPending() && check(CLOSEPAREN);
+        return booleanLiteralPending()
+                || check(NOT)
+                || check(OPENPAREN)
+                || check(IDENTIFIER);
     }
 
     private boolean functionDefinitionPending() {
-        return check(FUNC) && check(IDENTIFIER) && check(OPENPAREN) && functionParameterListPending() && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE)
-                || check(FUNC) && check(IDENTIFIER) && check(OPENPAREN) && check(CLOSEPAREN) && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE)
-                || check(FUNC) && check(IDENTIFIER) && check(OPENPAREN) && functionParameterListPending() && check(CLOSEPAREN) && check(RETURNS) && functionReturnTypePending() && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE)
-                || check(FUNC) && check(IDENTIFIER) && check(OPENPAREN) && check(CLOSEPAREN) && check(RETURNS) && functionReturnTypePending() && check(OPENBRACE) && statementListPending() && check(CLOSEBRACE);
+        return check(FUNC);
     }
 
     private boolean functionReturnTypePending() {
@@ -177,8 +163,7 @@ public class NuRecognizer {
     }
 
     private boolean functionParameterListPending() {
-        return functionParameterPending()
-                || functionParameterPending() && check(COMMA) && functionParameterListPending();
+        return functionParameterPending();
     }
 
     private boolean functionParameterPending() {
@@ -188,7 +173,7 @@ public class NuRecognizer {
     private boolean assignmentPending() {
         return check(IDENTIFIER) && assignmentOperatorPending() && expressionPending();
     }
-//"=" | "+=" | "-=" | "*=" | "/=" | "%=" | "^="
+
     private boolean assignmentOperatorPending() {
         return check(ASSIGN)
                 || check(PLUSASSIGN)
@@ -200,23 +185,19 @@ public class NuRecognizer {
     }
 
     private boolean expressionListPending() {
-        return expressionPending()
-                || expressionPending() && check(COMMA) && expressionListPending();
+        return expressionPending();
     }
 
     private boolean initializationPending() {
-        return variableInitializerPending()
-                || constantInitializerPending();
+        return variableInitializerPending() || constantInitializerPending();
     }
 
     private boolean constantInitializerPending() {
-        return check(CONST) && check(IDENTIFIER) && check(COLON) && dataTypePending() && check(ASSIGN) && initializerExpressionPending();
+        return check(CONST);
     }
 
     private boolean variableInitializerPending() {
-        return check(VAR) && check(IDENTIFIER) && check(COLON) && dataTypePending()
-                || check(VAR) && check(IDENTIFIER) && check(COLON) && dataTypePending() && check(ASSIGN) && initializerExpressionPending()
-                || check(VAR) && check(IDENTIFIER) && check(ASSIGN) && initializerExpressionPending();
+        return check(VAR);
     }
 
     private boolean initializerExpressionPending() {
@@ -230,7 +211,6 @@ public class NuRecognizer {
 
     private boolean dataTypePending() {
         return check(KW_STRING) || check(INT) || check(FLOAT) || arrayTypePending();
-
     }
 
     private boolean arrayTypePending() {
@@ -242,7 +222,7 @@ public class NuRecognizer {
     }
 
     private boolean binaryPending() {
-        return expressionPending() && binaryOperatorPending() && expressionPending();
+        return expressionPending() && binaryOperatorPending();
     }
 
     private boolean binaryOperatorPending() {
@@ -268,17 +248,16 @@ public class NuRecognizer {
     }
 
     private boolean unaryPending() {
-        return (prefixUnaryOperatorsPending() && expressionPending()) || incrementExpressionPending();
+        return prefixUnaryOperatorsPending() || incrementExpressionPending();
     }
 
     private boolean incrementExpressionPending() {
-        return check(IDENTIFIER) && incrementOperatorsPending()
-                || incrementOperatorsPending() && check(IDENTIFIER);
+        return check(IDENTIFIER) && (checkNext(INCREMENT) || checkNext(DECREMENT))
+                || incrementOperatorsPending() && checkNext(IDENTIFIER);
     }
 
     private boolean incrementOperatorsPending() {
-        return check(INCREMENT)
-                || check(DECREMENT);
+        return check(INCREMENT) || check(DECREMENT);
     }
 
     private boolean prefixUnaryOperatorsPending() {
@@ -288,17 +267,16 @@ public class NuRecognizer {
     }
 
     private boolean primaryPending() {
-        return check(IDENTIFIER)
-                || literalPending()
+        return literalPending()
                 || groupingPending()
                 || functionCallPending()
                 || arrayReferencePending()
-                || tupleElementReferencePending();
+                || tupleElementReferencePending()
+                || check(IDENTIFIER);
     }
 
     private boolean tupleElementReferencePending() {
-        return tupleExpressionPending() && check(NUMBER)
-                || tupleExpressionPending() && check(IDENTIFIER);
+        return tupleExpressionPending();
     }
 
     private boolean tupleExpressionPending() {
@@ -306,8 +284,7 @@ public class NuRecognizer {
     }
 
     private boolean tupleListPending() {
-        return tupleValuePending()
-                || tupleValuePending() && check(COMMA) && tupleListPending();
+        return tupleValuePending();
     }
 
     private boolean tupleValuePending() {
@@ -315,15 +292,15 @@ public class NuRecognizer {
     }
 
     private boolean arrayReferencePending() {
-        return check(IDENTIFIER)
-                || check(OPENBRACKET)
-                || check(CLOSEBRACKET);
+        return check(OPENBRACKET)
+                || check(CLOSEBRACKET)
+                || check(IDENTIFIER);
     }
 
     private boolean functionCallPending() {
-        return check(IDENTIFIER)
-                || check(OPENPAREN)
-                || check(CLOSEPAREN);
+        return check(OPENPAREN)
+                || check(CLOSEPAREN)
+                || check(IDENTIFIER);
     }
 
     private boolean groupingPending() {

@@ -5,13 +5,14 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Z {
     static boolean hadSyntaxError = false;
     static boolean hadRuntimeError = false;
 
     public static void main(String[] args) throws IOException {
-//        System.out.println(Arrays.toString(args));
+        System.out.println(Arrays.toString(args));
         try {
             if (singlePathProvided(args)) runFile(args[0]);
             else {
@@ -36,6 +37,7 @@ public class Z {
         ArrayList<Lexeme> lexemes = lexer.lex();
         printLexemes(lexemes);
         NuRecognizer recognizer = new NuRecognizer(lexemes);
+        recognizer.program();
     }
 
     private static void printLexemes(ArrayList<Lexeme> lexemes) {

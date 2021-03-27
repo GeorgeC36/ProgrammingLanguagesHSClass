@@ -20,10 +20,13 @@ public class NuRecognizer {
 
     // ---------- Utility Methods ----------
     private boolean check(TokenType expected) {
+
+        if (debug) System.out.println("    -- check: looking for " + expected + ", have " + currentLexeme + " --");
         return currentLexeme.getType() == expected;
     }
 
     private void consume(TokenType expected) {
+        if (debug) System.out.println("-- consume " + expected + " --");
         if (check(expected)) advance();
         else {
             Z.error(currentLexeme, "Expected " + expected + " but found " + currentLexeme);
@@ -34,6 +37,7 @@ public class NuRecognizer {
         if (nextLexemeIndex >= lexemes.size()) {
             return false;
         } else {
+            if (debug) System.out.println("    -- checkNext: looking for " + type + ", next is " + lexemes.get(nextLexemeIndex).getType() + " --");
             return lexemes.get(nextLexemeIndex).getType() == type;
         }
     }
@@ -43,10 +47,491 @@ public class NuRecognizer {
             currentLexeme = lexemes.get(nextLexemeIndex);
             nextLexemeIndex++;
         } while (currentLexeme.getType() == LINECOMMENT);
+        if (debug) System.out.println("-- advance: currentLexeme = " + currentLexeme + " --");
     }
 
     // ---------- Consumption Methods ----------
+    public void program() {
+        if (debug) System.out.println("-- program --");
+        while (statementListPending()) statementList();
+        System.out.println("-- END OF PROGRAM --");
+    }
 
+    private void statementList() {
+        if (debug) System.out.println("-- statementList --");
+        statement();
+    }
+
+    private void statement() {
+        if (debug) System.out.println("-- statement --");
+        if (assignmentPending()) assignment();
+        else if (initializationPending()) initialization();
+        else if (expressionPending()) expression();
+        else if (functionDefinitionPending()) functionDefinition();
+        else if (loopPending()) loop();
+        else if (conditionalPending()) conditional();
+        if (debug) System.out.println("== End of statement ==");
+   }
+
+    private void conditional() {
+        if (debug) System.out.println("-- conditional --");
+        if (ifElseStatementsPending()) ifElseStatements();
+        else if (switchCaseStatementsPending()) switchCaseStatements();
+    }
+
+    private void switchCaseStatements() {
+        if (debug) System.out.println("-- switchCaseStatements --");
+        switchStatement();
+        consume(OPENBRACE);
+        caseStatement();
+        consume(CLOSEBRACE);
+    }
+
+    private void caseStatement() {
+        if (debug) System.out.println("-- caseStatement --");
+        if (check(CASE)) {
+            consume(CASE);
+            expression();
+            consume(COLON);
+            statementList();
+        } else if (check(DEFAULT)) {
+            consume(DEFAULT);
+            consume(COLON);
+            statementList();
+        }
+    }
+
+    private void switchStatement() {
+        if (debug) System.out.println("-- switchStatement --");
+        consume(SWITCH);
+        if (checkNext(OPENPAREN)) {
+            consume(OPENPAREN);
+            expression();
+            consume(CLOSEPAREN);
+        } else if (expressionPending()) expression();
+    }
+
+    private void ifElseStatements() {
+        if (debug) System.out.println("-- ifElseStatements --");
+        ifStatement();
+        if (elseIfStatementPending()) elseIfStatement();
+        if (elseStatementPending()) elseStatement();
+    }
+
+    private void elseStatement() {
+        if (debug) System.out.println("-- elseStatement --");
+        consume(ELSE);
+        consume(OPENBRACE);
+        statementList();
+        consume(CLOSEBRACE);
+    }
+
+    private void elseIfStatement() {
+        if (debug) System.out.println("-- elseIfStatement --");
+        consume(ELSE);
+        ifStatement();
+    }
+
+    private void ifStatement() {
+        if (debug) System.out.println("-- ifStatement --");
+        consume(IF);
+        if (check(OPENPAREN)) {
+            consume(OPENPAREN);
+            booleanExpression();
+            consume(CLOSEPAREN);
+        } else if (booleanExpressionPending()) booleanExpression();
+        consume(OPENBRACE);
+        statementList();
+        consume(CLOSEBRACE);
+    }
+
+    private void loop() {
+        if (debug) System.out.println("-- loop --");
+        if (forLoopPending()) forLoop();
+        else if (forInPending()) forIn();
+        else if (whileLoopPending()) whileLoop();
+    }
+
+    private void whileLoop() {
+        if (debug) System.out.println("-- whileLoop --");
+        consume(WHILE);
+        consume(OPENPAREN);
+        booleanExpression();
+        consume(CLOSEPAREN);
+        consume(OPENBRACE);
+        statementList();
+        consume(CLOSEBRACE);
+    }
+
+    private void forIn() {
+        if (debug) System.out.println("-- forIn --");
+        consume(FOR);
+        consume(IDENTIFIER);
+        consume(IN);
+        iterable();
+        consume(OPENBRACE);
+        statementList();
+        consume(CLOSEBRACE);
+    }
+
+    private void iterable() {
+        if (debug) System.out.println("-- iterable --");
+        if (rangePending()) range();
+        else if (check(IDENTIFIER)) consume(IDENTIFIER);
+    }
+
+    private void range() {
+        if (debug) System.out.println("-- range --");
+        expression();
+        consume(ELLIPSIS);
+        expression();
+    }
+
+    private void forLoop() {
+        if (debug) System.out.println("-- forLoop --");
+        consume(FOR);
+        consume(OPENPAREN);
+        if (assignmentPending()) {
+            assignment();
+            consume(SEMICOLON);
+        }
+        if (booleanExpressionPending()) {
+            booleanExpression();
+            consume(SEMICOLON);
+        }
+        if (loopIncrementPending()) {
+            loopIncrement();
+        }
+        consume(CLOSEPAREN);
+        consume(OPENBRACE);
+        statementList();
+        consume(CLOSEBRACE);
+    }
+
+    private void loopIncrement() {
+        if (debug) System.out.println("-- loopIncrement --");
+        if (assignmentPending()) assignment();
+        else if (incrementExpressionPending()) incrementExpression();
+    }
+
+    private void booleanExpression() {
+        if (debug) System.out.println("-- booleanExpression --");
+        if (unaryBooleanPending()) unaryBoolean();
+        else if (simpleBooleanPending()) simpleBoolean();
+        else if (binaryBooleanPending()) binaryBoolean();
+    }
+
+    private void binaryBoolean() {
+        if (debug) System.out.println("-- binaryBoolean --");
+        booleanExpression();
+        comparator();
+        booleanExpression();
+    }
+
+    private void simpleBoolean() {
+        if (debug) System.out.println("-- simpleBoolean --");
+        expression();
+        comparator();
+        expression();
+    }
+
+    private void unaryBoolean() {
+        if (debug) System.out.println("-- unaryBoolean --");
+        if (check(IDENTIFIER)) consume(IDENTIFIER);
+        else if (booleanLiteralPending()) booleanLiteral();
+        else if (check(NOT)) {
+            consume(NOT);
+            booleanExpression();
+        }
+        else if (check(OPENPAREN)) {
+            consume(OPENPAREN);
+            booleanExpression();
+            consume(CLOSEPAREN);
+        }
+    }
+
+    private void functionDefinition() {
+        if (debug) System.out.println("-- functionDefinition --");
+        consume(FUNC);
+        consume(IDENTIFIER);
+        consume(OPENPAREN);
+        if (functionParameterListPending()) functionParameterList();
+        consume(CLOSEPAREN);
+        if (check(RETURNS)) {
+            consume(RETURNS);
+            functionReturnType();
+        }
+        consume(OPENBRACE);
+        statementList();
+        consume(CLOSEBRACE);
+    }
+
+    private void functionReturnType() {
+        if (debug) System.out.println("-- functionReturnType --");
+        if (dataTypePending()) dataType();
+        else if (check(VOID)) consume(VOID);
+    }
+
+    private void functionParameterList() {
+        if (debug) System.out.println("-- functionParameterList --");
+        functionParameter();
+        if (check(COMMA)) {
+            consume(COMMA);
+            functionParameterList();
+        }
+    }
+
+    private void functionParameter() {
+        if (debug) System.out.println("-- functionParameter --");
+        consume(IDENTIFIER);
+        consume(COLON);
+        dataType();
+    }
+
+    private void assignment() {
+        if (debug) System.out.println("-- assignment --");
+        consume(IDENTIFIER);
+        assignmentOperator();
+        expression();
+    }
+
+    private void assignmentOperator() {
+        if (debug) System.out.println("-- assignmentOperator --");
+        if (check(ASSIGN)) consume(ASSIGN);
+        else if (check(PLUSASSIGN)) consume(PLUSASSIGN);
+        else if (check(MINUSASSIGN)) consume(MINUSASSIGN);
+        else if (check(TIMESASSIGN)) consume(TIMESASSIGN);
+        else if (check(DIVIDEASSIGN)) consume(DIVIDEASSIGN);
+        else if (check(MODASSIGN)) consume(MODASSIGN);
+        else if (check(EXPASSIGN)) consume(EXPASSIGN);
+    }
+
+    private void initialization() {
+        if (debug) System.out.println("-- initialization --");
+        if (variableInitializerPending()) variableInitializer();
+        else if (constantInitializerPending()) constantInitializer();
+    }
+
+    private void constantInitializer() {
+        if (debug) System.out.println("-- constantInitializer --");
+        consume(CONST);
+        consume(IDENTIFIER);
+        if (check(COLON)) {
+            consume(COLON);
+            dataType();
+        }
+        consume(ASSIGN);
+        initializerExpression();
+    }
+
+    private void variableInitializer() {
+        if (debug) System.out.println("-- variableInitializer --");
+        consume(VAR);
+        consume(IDENTIFIER);
+        if (check(COLON)) {
+            consume(COLON);
+            dataType();
+            consume(ASSIGN);
+            initializerExpression();
+        } else if (check(ASSIGN)) {
+            consume(ASSIGN);
+            initializerExpression();
+        }
+    }
+
+    private void initializerExpression() {
+        if (debug) System.out.println("-- initializerExpression --");
+        if (expressionPending()) expression();
+        if (arrayInitializerPending()) arrayInitializer();
+    }
+
+    private void arrayInitializer() {
+        if (debug) System.out.println("-- arrayInitializer --");
+        consume(OPENBRACKET);
+        if (expressionListPending()) expressionList();
+        consume(CLOSEBRACKET);
+    }
+
+    private void dataType() {
+        if (debug) System.out.println("-- dataType --");
+        if (check(STRING)) consume(STRING);
+        else if (check(INT)) consume(INT);
+        else if (check(FLOAT)) consume(FLOAT);
+        else if (arrayTypePending()) arrayType();
+    }
+
+    private void arrayType() {
+        if (debug) System.out.println("-- arrayType --");
+        consume(OPENBRACKET);
+        dataType();
+        consume(CLOSEBRACKET);
+    }
+
+    private void expressionList() {
+        if (debug) System.out.println("-- expressionList --");
+        if (expressionPending()) expression();
+        else if (checkNext(COMMA)) {
+            expression();
+            consume(COMMA);
+            expressionList();
+        }
+    }
+
+    private void expression() {
+        if (debug) System.out.println("-- expression --");
+        if (primaryPending()) primary();
+        else if (unaryPending()) unary();
+        else if (binaryPending()) binary();
+    }
+
+    private void binary() {
+        if (debug) System.out.println("-- binary --");
+        expression();
+        binaryOperator();
+        expression();
+    }
+
+    private void binaryOperator() {
+        if (debug) System.out.println("-- binaryOperator --");
+        if (comparatorPending()) comparator();
+        else if (mathematicalOperatorPending()) mathematicalOperator();
+    }
+
+    private void mathematicalOperator() {
+        if (debug) System.out.println("-- mathematicalOperator --");
+        if (check(PLUS)) consume(PLUS);
+        else if (check(MINUS)) consume(MINUS);
+        else if (check(MINUS)) consume(MINUS);
+        else if (check(TIMES)) consume(TIMES);
+        else if (check(DIVIDE)) consume(DIVIDE);
+        else if (check(EXP)) consume(EXP);
+        else if (check(MOD)) consume(MOD);
+    }
+
+    private void comparator() {
+        if (debug) System.out.println("-- comparator --");
+        if (check(GREATER)) consume(GREATER);
+        else if (check(GREATEREQUAL)) consume(GREATEREQUAL);
+        else if (check(LESS)) consume(LESS);
+        else if (check(LESSEQUAL)) consume(LESSEQUAL);
+        else if (check(NOTEQUAL)) consume(NOTEQUAL);
+        else if (check(EQUAL)) consume(EQUAL);
+    }
+
+    private void unary() {
+        if (debug) System.out.println("-- unary --");
+        if (prefixUnaryOperatorsPending()) {
+            prefixUnaryOperators();
+            expression();
+        } else if (incrementExpressionPending()) incrementExpression();
+    }
+
+    private void incrementExpression() {
+        if (debug) System.out.println("-- incrementExpression --");
+        if (check(INCREMENT)) consume(INCREMENT);
+        else if (check(DECREMENT)) consume(DECREMENT);
+    }
+
+    private void prefixUnaryOperators() {
+        if (debug) System.out.println("-- prefixUnaryOperators --");
+        if (check(PLUS)) consume(PLUS);
+        else if (check(MINUS)) consume(MINUS);
+        else if (check(NOT)) consume(NOT);
+    }
+
+    private void primary() {
+        if (debug) System.out.println("-- primary --");
+        if (check(IDENTIFIER)) consume(IDENTIFIER);
+        else if (literalPending()) literal();
+        else if (groupingPending()) grouping();
+        else if (functionCallPending()) functionCall();
+        else if (arrayReferencePending()) arrayReference();
+        else if (tupleElementReferencePending()) tupleElementReference();
+    }
+
+    private void arrayReference() {
+        if (debug) System.out.println("-- arrayReference --");
+        consume(IDENTIFIER);
+        consume(OPENBRACKET);
+        expression();
+        consume(CLOSEBRACKET);
+    }
+
+    private void functionCall() {
+        if (debug) System.out.println("-- functionCall --");
+        consume(IDENTIFIER);
+        consume(OPENPAREN);
+        if (argumentListPending()) argumentList();
+        consume(CLOSEPAREN);
+    }
+
+    private void argumentList() {
+        if (debug) System.out.println("-- argumentList --");
+        if (check(IDENTIFIER)) {
+            consume(IDENTIFIER);
+            consume(COLON);
+        }
+        expression();
+        if (check(COMMA)) {
+            consume(COMMA);
+            argumentList();
+        }
+    }
+
+    private void grouping() {
+        if (debug) System.out.println("-- grouping --");
+        consume(OPENPAREN);
+        expression();
+        consume(CLOSEPAREN);
+    }
+
+    private void literal() {
+        if (debug) System.out.println("-- literal --");
+        if (check(NUMBER)) consume(NUMBER);
+        else if (check(INT)) consume(INT);
+        else if (check(FLOAT)) consume(FLOAT);
+        else if (booleanLiteralPending()) booleanLiteral();
+        else if (check(STRING)) consume(STRING);
+    }
+
+    private void booleanLiteral() {
+        if (debug) System.out.println("-- booleanLiteral --");
+        if (check(TRUE)) consume(TRUE);
+        else if (check(FALSE)) consume(FALSE);
+    }
+
+    private void tupleElementReference() {
+        if (debug) System.out.println("-- tupleElementReference --");
+        tupleExpression();
+        if (check(NUMBER)) consume(NUMBER);
+        else if (check(IDENTIFIER)) consume(IDENTIFIER);
+    }
+
+    private void tupleExpression() {
+        if (debug) System.out.println("-- tupleExpression --");
+        consume(OPENPAREN);
+        tupleList();
+        consume(CLOSEPAREN);
+    }
+
+    private void tupleList() {
+        if (debug) System.out.println("-- tupleList --");
+        tupleValue();
+        if (check(COMMA)) {
+            consume(COMMA);
+            tupleList();
+        }
+    }
+
+    private void tupleValue() {
+        if (debug) System.out.println("-- tupleValue --");
+        if (check(IDENTIFIER)) {
+            consume(IDENTIFIER);
+            consume(COLON);
+            expression();
+        }
+        expression();
+    }
 
     // ---------- Pending Methods ----------
     private boolean programPending() {
@@ -58,6 +543,7 @@ public class NuRecognizer {
     }
 
     private boolean statementPending() {
+        if (debug) System.out.println("  -- statementPending --");
         return assignmentPending()
                 || initializationPending() 
                 || expressionPending()
@@ -177,6 +663,7 @@ public class NuRecognizer {
     }
 
     private boolean assignmentPending() {
+        if (debug) System.out.println("  -- assignmentPending --");
         return check(IDENTIFIER)
                 && (checkNext(ASSIGN)
                 || checkNext(PLUSASSIGN)
@@ -232,14 +719,16 @@ public class NuRecognizer {
     }
 
     private boolean expressionPending() {
+        if (debug) System.out.println("  -- expressionPending --");
         return primaryPending() || unaryPending() || binaryPending();
     }
 
     private boolean binaryPending() {
-        return expressionPending()
-                && (checkNext(PLUS) || checkNext(MINUS) || checkNext(TIMES) || checkNext(DIVIDE) || checkNext(EXP) || checkNext(MOD)
+        if (debug) System.out.println("  -- binaryPending --");
+        return (checkNext(PLUS) || checkNext(MINUS) || checkNext(TIMES) || checkNext(DIVIDE) || checkNext(EXP) || checkNext(MOD)
                 || checkNext(GREATER) || checkNext(GREATEREQUAL) || checkNext(LESS) || checkNext(LESSEQUAL)
-                || checkNext(NOTEQUAL) || checkNext(EQUAL));
+                || checkNext(NOTEQUAL) || checkNext(EQUAL))
+            && expressionPending();
     }
 
     private boolean binaryOperatorPending() {
@@ -327,7 +816,10 @@ public class NuRecognizer {
     }
 
     private boolean literalPending() {
+        if (debug) System.out.println("  -- literalPending --");
         return check(NUMBER)
+        	|| check(INT)
+        	|| check(FLOAT)
                 || booleanLiteralPending()
                 || check(STRING);
     }

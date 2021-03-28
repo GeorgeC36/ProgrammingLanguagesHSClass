@@ -137,9 +137,11 @@ public class NuRecognizer {
         consume(IF);
         if (check(OPENPAREN)) {
             consume(OPENPAREN);
-            booleanExpression();
+            if (booleanExpressionPending()) booleanExpression();
+            else Z.error(currentLexeme.getLineNumber(), "Missing boolean expression in if statement");
             consume(CLOSEPAREN);
         } else if (booleanExpressionPending()) booleanExpression();
+        else Z.error(currentLexeme.getLineNumber(), "Missing boolean expression in if statement");
         consume(OPENBRACE);
         statementList();
         consume(CLOSEBRACE);
@@ -216,9 +218,9 @@ public class NuRecognizer {
 
     private void booleanExpression() {
         if (debug) System.out.println("-- booleanExpression --");
-        if (unaryBooleanPending()) unaryBoolean();
-        else if (simpleBooleanPending()) simpleBoolean();
+        if (simpleBooleanPending()) simpleBoolean();
         else if (binaryBooleanPending()) binaryBoolean();
+        else if (unaryBooleanPending()) unaryBoolean();
     }
 
     private void binaryBoolean() {
@@ -573,7 +575,7 @@ public class NuRecognizer {
     }
 
     private boolean elseStatementPending() {
-        return check(ELSE) && check(OPENBRACE);
+        return check(ELSE) && checkNext(OPENBRACE);
     }
 
     private boolean elseIfStatementPending() {
@@ -615,13 +617,13 @@ public class NuRecognizer {
     }
 
     private boolean booleanExpressionPending() {
-        return unaryBooleanPending()
-                || simpleBooleanPending()
-                || binaryBooleanPending();
+        return simpleBooleanPending()
+                || binaryBooleanPending()
+                || unaryBooleanPending();
     }
 
     private boolean binaryBooleanPending() {
-        return booleanExpressionPending() && (checkNext(AND) || checkNext(OR));
+        return (checkNext(AND) || checkNext(OR)) && booleanExpressionPending();
     }
 
     private boolean conjunctionPending() {
@@ -629,20 +631,20 @@ public class NuRecognizer {
     }
 
     private boolean simpleBooleanPending() {
-        return expressionPending()
-                && (checkNext(GREATER)
+        return (checkNext(GREATER)
                 || checkNext(GREATEREQUAL)
                 || checkNext(LESS)
                 || checkNext(LESSEQUAL)
                 || checkNext(NOTEQUAL)
-                || checkNext(EQUAL));
+                || checkNext(EQUAL))
+                && expressionPending();
     }
 
     private boolean unaryBooleanPending() {
-        return booleanLiteralPending()
-                || check(NOT)
+        return check(NOT)
                 || check(OPENPAREN)
-                || check(IDENTIFIER);
+                || check(IDENTIFIER)
+                || booleanLiteralPending();
     }
 
     private boolean functionDefinitionPending() {
@@ -818,8 +820,8 @@ public class NuRecognizer {
     private boolean literalPending() {
         if (debug) System.out.println("  -- literalPending --");
         return check(NUMBER)
-        	|| check(INT)
-        	|| check(FLOAT)
+        	    || check(INT)
+        	    || check(FLOAT)
                 || booleanLiteralPending()
                 || check(STRING);
     }

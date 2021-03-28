@@ -53,13 +53,13 @@ public class NuRecognizer {
     // ---------- Consumption Methods ----------
     public void program() {
         if (debug) System.out.println("-- program --");
-        while (statementListPending()) statementList();
+        if (statementListPending()) statementList();
         System.out.println("-- END OF PROGRAM --");
     }
 
     private void statementList() {
         if (debug) System.out.println("-- statementList --");
-        statement();
+        while (statementPending()) statement();
     }
 
     private void statement() {

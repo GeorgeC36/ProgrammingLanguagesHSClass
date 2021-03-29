@@ -23,8 +23,8 @@ public class Lexer {
         keywords.put("var", TokenType.VAR);
         keywords.put("const", TokenType.CONST);
 
-        keywords.put("int", TokenType.INT);
-        keywords.put("float", TokenType.FLOAT);
+        keywords.put("int", TokenType.KW_INT);
+        keywords.put("float", TokenType.KW_FLOAT);
         keywords.put("String", TokenType.KW_STRING);
 
         keywords.put("true", TokenType.TRUE);
@@ -212,13 +212,15 @@ public class Lexer {
 
         // Look for a fractional part
         if (peek() == '.') {
-            // Ensure there is a digit following the decimal point
-            if (!isDigit(peekNext())) Z.error(lineNumber, "Malformed real number (ends in decimal point).");
+            if (peekNext() != '.') {
+                // Ensure there is a digit following the decimal point
+                if (!isDigit(peekNext())) Z.error(lineNumber, "Malformed real number (ends in decimal point).");
 
-            isInteger = false;
-            // Consume the '.'
-            advance();
-            while (isDigit(peek())) advance();
+                isInteger = false;
+                // Consume the '.'
+                advance();
+                while (isDigit(peek())) advance();
+            }
         }
         String numberString = source.substring(startOfCurrentLexeme, currentPosition);
         if (isInteger) {

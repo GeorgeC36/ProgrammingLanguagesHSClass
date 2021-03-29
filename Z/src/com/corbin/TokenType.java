@@ -2,10 +2,10 @@ package com.corbin;
 
 public enum TokenType {
 
-    IDENTIFIER, NUMBER, STRING,
+    IDENTIFIER, INT, FLOAT, STRING,
 
     // Keywords
-    INT, FLOAT, KW_STRING, TRUE, FALSE, FUNC, VOID, VAR, CONST, FOR, IN, WHILE, IF,
+    KW_INT, KW_FLOAT, KW_STRING, TRUE, FALSE, FUNC, VOID, VAR, CONST, FOR, IN, WHILE, IF,
     ELSE, SWITCH, CASE, DEFAULT,
 
     // Operators

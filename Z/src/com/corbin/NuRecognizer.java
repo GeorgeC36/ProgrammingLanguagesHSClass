@@ -83,7 +83,7 @@ public class NuRecognizer {
         if (debug) System.out.println("-- switchCaseStatements --");
         switchStatement();
         consume(OPENBRACE);
-        caseStatement();
+        while (caseStatementPending()) caseStatement();
         consume(CLOSEBRACE);
     }
 
@@ -184,9 +184,9 @@ public class NuRecognizer {
 
     private void range() {
         if (debug) System.out.println("-- range --");
-        expression();
+        primary();
         consume(ELLIPSIS);
-        expression();
+        primary();
     }
 
     private void forLoop() {
@@ -292,7 +292,10 @@ public class NuRecognizer {
 
     private void assignment() {
         if (debug) System.out.println("-- assignment --");
-        consume(IDENTIFIER);
+        if (arrayReferencePending()) arrayReference();
+        else {
+            consume(IDENTIFIER);
+        }
         assignmentOperator();
         expression();
     }
@@ -328,16 +331,21 @@ public class NuRecognizer {
 
     private void variableInitializer() {
         if (debug) System.out.println("-- variableInitializer --");
+        boolean legalSyntax = false;
         consume(VAR);
         consume(IDENTIFIER);
         if (check(COLON)) {
             consume(COLON);
             dataType();
+            legalSyntax = true;
+        }
+        if (check(ASSIGN)) {
             consume(ASSIGN);
             initializerExpression();
-        } else if (check(ASSIGN)) {
-            consume(ASSIGN);
-            initializerExpression();
+            legalSyntax = true;
+        }
+        if (!legalSyntax) {
+            Z.error(currentLexeme.getLineNumber(), "Variable declaration without type or initialization");
         }
     }
 
@@ -356,9 +364,9 @@ public class NuRecognizer {
 
     private void dataType() {
         if (debug) System.out.println("-- dataType --");
-        if (check(STRING)) consume(STRING);
-        else if (check(INT)) consume(INT);
-        else if (check(FLOAT)) consume(FLOAT);
+        if (check(KW_STRING)) consume(KW_STRING);
+        else if (check(KW_INT)) consume(KW_INT);
+        else if (check(KW_FLOAT)) consume(KW_FLOAT);
         else if (arrayTypePending()) arrayType();
     }
 
@@ -372,8 +380,7 @@ public class NuRecognizer {
     private void expressionList() {
         if (debug) System.out.println("-- expressionList --");
         if (expressionPending()) expression();
-        else if (checkNext(COMMA)) {
-            expression();
+        if (check(COMMA)) {
             consume(COMMA);
             expressionList();
         }
@@ -443,12 +450,12 @@ public class NuRecognizer {
 
     private void primary() {
         if (debug) System.out.println("-- primary --");
-        if (check(IDENTIFIER)) consume(IDENTIFIER);
-        else if (literalPending()) literal();
+        if (literalPending()) literal();
         else if (groupingPending()) grouping();
         else if (functionCallPending()) functionCall();
         else if (arrayReferencePending()) arrayReference();
         else if (tupleElementReferencePending()) tupleElementReference();
+        else if (check(IDENTIFIER)) consume(IDENTIFIER);
     }
 
     private void arrayReference() {
@@ -489,8 +496,7 @@ public class NuRecognizer {
 
     private void literal() {
         if (debug) System.out.println("-- literal --");
-        if (check(NUMBER)) consume(NUMBER);
-        else if (check(INT)) consume(INT);
+        if (check(INT)) consume(INT);
         else if (check(FLOAT)) consume(FLOAT);
         else if (booleanLiteralPending()) booleanLiteral();
         else if (check(STRING)) consume(STRING);
@@ -505,7 +511,7 @@ public class NuRecognizer {
     private void tupleElementReference() {
         if (debug) System.out.println("-- tupleElementReference --");
         tupleExpression();
-        if (check(NUMBER)) consume(NUMBER);
+        if (check(INT)) consume(INT);
         else if (check(IDENTIFIER)) consume(IDENTIFIER);
     }
 
@@ -587,6 +593,7 @@ public class NuRecognizer {
     }
 
     private boolean loopPending() {
+        if (debug) System.out.println("  -- loopPending --");
         return forLoopPending()
                 || forInPending()
                 || whileLoopPending();
@@ -597,7 +604,7 @@ public class NuRecognizer {
     }
 
     private boolean forInPending() {
-        return check(FOR) && check(IDENTIFIER);
+        return check(FOR) && checkNext(IDENTIFIER);
     }
 
     private boolean iterablePending() {
@@ -605,11 +612,11 @@ public class NuRecognizer {
     }
 
     private boolean rangePending() {
-        return expressionPending() && check(ELLIPSIS);
+        return checkNext(ELLIPSIS) && primaryPending();
     }
 
     private boolean forLoopPending() {
-        return check(FOR) && check(OPENPAREN);
+        return check(FOR) && checkNext(OPENPAREN);
     }
 
     private boolean loopIncrementPending() {
@@ -648,6 +655,7 @@ public class NuRecognizer {
     }
 
     private boolean functionDefinitionPending() {
+        if (debug) System.out.println("  -- functionDefinitionPending --");
         return check(FUNC);
     }
 
@@ -713,7 +721,7 @@ public class NuRecognizer {
     }
 
     private boolean dataTypePending() {
-        return check(KW_STRING) || check(INT) || check(FLOAT) || arrayTypePending();
+        return check(KW_STRING) || check(KW_INT) || check(KW_FLOAT) || arrayTypePending();
     }
 
     private boolean arrayTypePending() {
@@ -819,8 +827,7 @@ public class NuRecognizer {
 
     private boolean literalPending() {
         if (debug) System.out.println("  -- literalPending --");
-        return check(NUMBER)
-        	    || check(INT)
+        return check(INT)
         	    || check(FLOAT)
                 || booleanLiteralPending()
                 || check(STRING);

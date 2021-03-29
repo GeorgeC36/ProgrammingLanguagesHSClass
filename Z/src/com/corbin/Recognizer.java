@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import static com.corbin.TokenType.*;
 
-public class NuRecognizer {
+public class Recognizer {
     private static final boolean debug = true;
 
     // ---------- Instance Variables ----------
@@ -13,7 +13,7 @@ public class NuRecognizer {
     private Lexeme currentLexeme;
 
     // ---------- Constructor ----------
-    public NuRecognizer(ArrayList<Lexeme> lexemes) {
+    public Recognizer(ArrayList<Lexeme> lexemes) {
         this.lexemes = lexemes;
         advance();
     }
@@ -296,6 +296,7 @@ public class NuRecognizer {
         else {
             consume(IDENTIFIER);
         }
+        System.out.println("BACK FROM ARRAYREFERENCE");
         assignmentOperator();
         expression();
     }
@@ -456,14 +457,19 @@ public class NuRecognizer {
         else if (arrayReferencePending()) arrayReference();
         else if (tupleElementReferencePending()) tupleElementReference();
         else if (check(IDENTIFIER)) consume(IDENTIFIER);
+        System.out.println("----------------------HI");
     }
 
     private void arrayReference() {
         if (debug) System.out.println("-- arrayReference --");
         consume(IDENTIFIER);
+        System.out.println("------------ Done ID");
         consume(OPENBRACKET);
+        System.out.println("------------ Done OBRACKET");
         expression();
+        System.out.println("------------ Done EXPRESSION");
         consume(CLOSEBRACKET);
+        System.out.println("------------ Done CBRACKET");
     }
 
     private void functionCall() {

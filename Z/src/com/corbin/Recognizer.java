@@ -455,19 +455,14 @@ public class Recognizer {
         else if (functionCallPending()) functionCall();
         else if (arrayReferencePending()) arrayReference();
         else if (check(IDENTIFIER)) consume(IDENTIFIER);
-        System.out.println("----------------------HI");
     }
 
     private void arrayReference() {
         if (debug) System.out.println("-- arrayReference --");
         consume(IDENTIFIER);
-        System.out.println("------------ Done ID");
         consume(OPENBRACKET);
-        System.out.println("------------ Done OBRACKET");
         expression();
-        System.out.println("------------ Done EXPRESSION");
         consume(CLOSEBRACKET);
-        System.out.println("------------ Done CBRACKET");
     }
 
     private void functionCall() {

@@ -8,7 +8,7 @@ public class Recognizer {
     private static final boolean debug = true;
 
     // ---------- Instance Variables ----------
-    ArrayList<Lexeme>  lexemes;
+    ArrayList<Lexeme> lexemes;
     private int nextLexemeIndex = 0;
     private Lexeme currentLexeme;
 
@@ -37,7 +37,8 @@ public class Recognizer {
         if (nextLexemeIndex >= lexemes.size()) {
             return false;
         } else {
-            if (debug) System.out.println("    -- checkNext: looking for " + type + ", next is " + lexemes.get(nextLexemeIndex).getType() + " --");
+            if (debug)
+                System.out.println("    -- checkNext: looking for " + type + ", next is " + lexemes.get(nextLexemeIndex).getType() + " --");
             return lexemes.get(nextLexemeIndex).getType() == type;
         }
     }
@@ -64,14 +65,14 @@ public class Recognizer {
 
     private void statement() {
         if (debug) System.out.println("-- statement --");
-        if (assignmentPending()) assignment();
+        if (functionCallPending()) functionCall();
         else if (initializationPending()) initialization();
-        else if (expressionPending()) expression();
+        else if (assignmentPending()) assignment();
         else if (functionDefinitionPending()) functionDefinition();
         else if (loopPending()) loop();
         else if (conditionalPending()) conditional();
         if (debug) System.out.println("== End of statement ==");
-   }
+    }
 
     private void conditional() {
         if (debug) System.out.println("-- conditional --");
@@ -244,8 +245,7 @@ public class Recognizer {
         else if (check(NOT)) {
             consume(NOT);
             booleanExpression();
-        }
-        else if (check(OPENPAREN)) {
+        } else if (check(OPENPAREN)) {
             consume(OPENPAREN);
             booleanExpression();
             consume(CLOSEPAREN);
@@ -296,7 +296,6 @@ public class Recognizer {
         else {
             consume(IDENTIFIER);
         }
-        System.out.println("BACK FROM ARRAYREFERENCE");
         assignmentOperator();
         expression();
     }
@@ -558,9 +557,9 @@ public class Recognizer {
 
     private boolean statementPending() {
         if (debug) System.out.println("  -- statementPending --");
-        return assignmentPending()
-                || initializationPending() 
-                || expressionPending()
+        return functionCallPending()
+                || initializationPending()
+                || assignmentPending()
                 || functionDefinitionPending()
                 || loopPending()
                 || conditionalPending();
@@ -680,16 +679,16 @@ public class Recognizer {
 
     private boolean assignmentPending() {
         if (debug) System.out.println("  -- assignmentPending --");
-        return check(IDENTIFIER)
-                && (checkNext(ASSIGN)
-                || checkNext(PLUSASSIGN)
-                || checkNext(MINUSASSIGN)
-                || checkNext(TIMESASSIGN)
-                || checkNext(DIVIDEASSIGN)
-                || checkNext(MODASSIGN)
-                || checkNext(EXPASSIGN));
+        return arrayReferencePending() ||
+                (check(IDENTIFIER)
+                        && (checkNext(ASSIGN)
+                        || checkNext(PLUSASSIGN)
+                        || checkNext(MINUSASSIGN)
+                        || checkNext(TIMESASSIGN)
+                        || checkNext(DIVIDEASSIGN)
+                        || checkNext(MODASSIGN)
+                        || checkNext(EXPASSIGN)));
     }
-
 
 
     private boolean assignmentOperatorPending() {
@@ -744,7 +743,7 @@ public class Recognizer {
         return (checkNext(PLUS) || checkNext(MINUS) || checkNext(TIMES) || checkNext(DIVIDE) || checkNext(EXP) || checkNext(MOD)
                 || checkNext(GREATER) || checkNext(GREATEREQUAL) || checkNext(LESS) || checkNext(LESSEQUAL)
                 || checkNext(NOTEQUAL) || checkNext(EQUAL))
-            && expressionPending();
+                && expressionPending();
     }
 
     private boolean binaryOperatorPending() {
@@ -834,7 +833,7 @@ public class Recognizer {
     private boolean literalPending() {
         if (debug) System.out.println("  -- literalPending --");
         return check(INT)
-        	    || check(FLOAT)
+                || check(FLOAT)
                 || booleanLiteralPending()
                 || check(STRING);
     }

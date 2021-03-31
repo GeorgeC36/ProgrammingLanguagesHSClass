@@ -4,7 +4,7 @@ program ::= statementList?
 
 statementList ::= statement*
 
-statement ::= expression
+statement ::= functionCall
         | initialization
         | assignment
         | functionDefinition
@@ -84,7 +84,8 @@ initializerExpression ::= expression | arrayInitializer
 
 arrayInitializer ::= "[" expressionList? "]"
 
-assignment ::= IDENTIFIER assignmentOperator expression
+assignment ::= arrayReference assignmentOperator expression
+               	| IDENTIFIER assignmentOperator expression
 
 assignmentOperator ::= "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "^="
 

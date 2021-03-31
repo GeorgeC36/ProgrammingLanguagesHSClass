@@ -454,7 +454,6 @@ public class Recognizer {
         else if (groupingPending()) grouping();
         else if (functionCallPending()) functionCall();
         else if (arrayReferencePending()) arrayReference();
-        else if (tupleElementReferencePending()) tupleElementReference();
         else if (check(IDENTIFIER)) consume(IDENTIFIER);
         System.out.println("----------------------HI");
     }
@@ -511,39 +510,6 @@ public class Recognizer {
         if (debug) System.out.println("-- booleanLiteral --");
         if (check(TRUE)) consume(TRUE);
         else if (check(FALSE)) consume(FALSE);
-    }
-
-    private void tupleElementReference() {
-        if (debug) System.out.println("-- tupleElementReference --");
-        tupleExpression();
-        if (check(INT)) consume(INT);
-        else if (check(IDENTIFIER)) consume(IDENTIFIER);
-    }
-
-    private void tupleExpression() {
-        if (debug) System.out.println("-- tupleExpression --");
-        consume(OPENPAREN);
-        tupleList();
-        consume(CLOSEPAREN);
-    }
-
-    private void tupleList() {
-        if (debug) System.out.println("-- tupleList --");
-        tupleValue();
-        if (check(COMMA)) {
-            consume(COMMA);
-            tupleList();
-        }
-    }
-
-    private void tupleValue() {
-        if (debug) System.out.println("-- tupleValue --");
-        if (check(IDENTIFIER)) {
-            consume(IDENTIFIER);
-            consume(COLON);
-            expression();
-        }
-        expression();
     }
 
     // ---------- Pending Methods ----------
@@ -792,25 +758,7 @@ public class Recognizer {
                 || groupingPending()
                 || functionCallPending()
                 || arrayReferencePending()
-                || tupleElementReferencePending()
                 || check(IDENTIFIER);
-    }
-
-    private boolean tupleElementReferencePending() {
-        return tupleExpressionPending();
-    }
-
-    private boolean tupleExpressionPending() {
-        return check(OPENPAREN);
-    }
-
-    private boolean tupleListPending() {
-        return tupleValuePending();
-    }
-
-    private boolean tupleValuePending() {
-        return (check(IDENTIFIER) && checkNext(COLON))
-                || expressionPending();
     }
 
     private boolean arrayReferencePending() {

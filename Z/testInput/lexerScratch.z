@@ -1,0 +1,26 @@
+var x = 5
+var y = "Hello, World!"
+var z = 4.2
+
+// Identifiers
+x 10 "Welcome!"
+
+// Keywords
+int float String true false func void var const for in while if else switch case default
+
+// Operators
+not greaterthan greaterthanequal equals notequal lessthan lessthanequal and or
+! + - * / ^ % ++ -- > >= == != < <= -> = += -= *= /= %= ^= && || ...
+
+// Punctuation
+( ) { } [ ] , : ;
+
+// LINE COMMENT
+
+
+// Errors
+@
+..
+3abc
+.123
+123.456.789

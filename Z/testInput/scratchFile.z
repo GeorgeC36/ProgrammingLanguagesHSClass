@@ -1,26 +1,58 @@
+// Initializations
+
 var x = 5
 var y = "Hello, World!"
-var z = 4.2
+var z = 4.0
 
-// Identifiers
-x 10 "Welcome!"
+// Arrays
 
-// Keywords
-int float String true false func void var const for in while if else switch case default
+var shoppingList: [String] = ["Eggs", "Milk"]
+var a = shoppingList[0]
+shoppingList[1] = "Bacon"
 
-// Operators
-not greaterthan greaterthanequal equals notequal lessthan lessthanequal and or
-! + - * / ^ % ++ -- > >= == != < <= -> = += -= *= /= %= ^= && || ...
+// Conditionals
 
-// Punctuation
-( ) { } [ ] , : ;
+if (x > z) {
+} else if y {
+} else {
 
-// LINE COMMENT
+var month = 8
+var monthString: String
 
+switch month {
+            case 1:  monthString = "January"
+                     break
+            case 2:  monthString = "February"
+                     break
+            case 3:  monthString = "March"
+                     break
+            case 4:  monthString = "April"
+                     break
+            default: monthString = "Invalid month"
+                     break
+        }
 
-// Errors
-@
-..
-3abc
-.123
-123.456.789
+// Loops
+
+for (i = 0; i < size; i++) {
+}
+var i = 1
+for i in 1...5 {
+}
+while (i < 6) {
+    i++
+}
+
+// Functions
+
+func greet(person: String) -> String {
+}
+greet("George")
+
+func bye(number: int) {
+}
+bye(8)
+
+func getName() {
+}
+getName()

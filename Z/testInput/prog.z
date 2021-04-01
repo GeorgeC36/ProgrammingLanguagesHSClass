@@ -2,14 +2,13 @@
 
 var x = 5
 var y = "Hello, World!"
-var z = 4.
-a = x +
+var z = 4.0
 
 // Arrays
 
 var shoppingList: [String] = ["Eggs", "Milk"]
 var a = shoppingList[0]
-shoppingList[1] = "Bacon
+shoppingList[1] = "Bacon"
 
 // Conditionals
 

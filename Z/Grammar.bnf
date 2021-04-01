@@ -6,6 +6,7 @@ statementList ::= statement*
 
 statement ::= functionCall
         | initialization
+        | incrementExpression
         | assignment
         | functionDefinition
         | loop

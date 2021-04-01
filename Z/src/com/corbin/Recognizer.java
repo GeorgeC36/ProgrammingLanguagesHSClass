@@ -67,6 +67,7 @@ public class Recognizer {
         if (debug) System.out.println("-- statement --");
         if (functionCallPending()) functionCall();
         else if (initializationPending()) initialization();
+        else if (incrementExpressionPending()) incrementExpression();
         else if (assignmentPending()) assignment();
         else if (functionDefinitionPending()) functionDefinition();
         else if (loopPending()) loop();
@@ -437,6 +438,7 @@ public class Recognizer {
 
     private void incrementExpression() {
         if (debug) System.out.println("-- incrementExpression --");
+        consume(IDENTIFIER);
         if (check(INCREMENT)) consume(INCREMENT);
         else if (check(DECREMENT)) consume(DECREMENT);
     }
@@ -520,6 +522,7 @@ public class Recognizer {
         if (debug) System.out.println("  -- statementPending --");
         return functionCallPending()
                 || initializationPending()
+                || incrementExpressionPending()
                 || assignmentPending()
                 || functionDefinitionPending()
                 || loopPending()

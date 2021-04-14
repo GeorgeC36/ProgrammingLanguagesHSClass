@@ -1,6 +1,7 @@
 package com.corbin;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import static com.corbin.TokenType.*;
 
@@ -11,6 +12,8 @@ public class Recognizer {
     ArrayList<Lexeme> lexemes;
     private int nextLexemeIndex = 0;
     private Lexeme currentLexeme;
+    private Lexeme left;
+    private Lexeme right;
 
     // ---------- Constructor ----------
     public Recognizer(ArrayList<Lexeme> lexemes) {
@@ -25,12 +28,13 @@ public class Recognizer {
         return currentLexeme.getType() == expected;
     }
 
-    private void consume(TokenType expected) {
+    private Lexeme consume(TokenType expected) {
         if (debug) System.out.println("-- consume " + expected + " --");
         if (check(expected)) advance();
         else {
             Z.error(currentLexeme, "Expected " + expected + " but found " + currentLexeme);
         }
+        return null;
     }
 
     private boolean checkNext(TokenType type) {
@@ -52,27 +56,22 @@ public class Recognizer {
     }
 
     // ---------- Consumption Methods ----------
-    public void program() {
-        if (debug) System.out.println("-- program --");
-        if (statementListPending()) statementList();
-        System.out.println("-- END OF PROGRAM --");
+    public Lexeme program() {
+        if (statementListPending()) return statementList();
     }
 
-    private void statementList() {
-        if (debug) System.out.println("-- statementList --");
-        while (statementPending()) statement();
+    private Lexeme statementList() {    // TODO (CHECK)
+        while (statementPending()) return statement();
     }
 
-    private void statement() {
-        if (debug) System.out.println("-- statement --");
-        if (functionCallPending()) functionCall();
-        else if (initializationPending()) initialization();
-        else if (incrementExpressionPending()) incrementExpression();
-        else if (assignmentPending()) assignment();
-        else if (functionDefinitionPending()) functionDefinition();
-        else if (loopPending()) loop();
-        else if (conditionalPending()) conditional();
-        if (debug) System.out.println("== End of statement ==");
+    private Lexeme statement() {
+        if (functionCallPending()) return functionCall();
+        else if (initializationPending()) return initialization();
+        else if (incrementExpressionPending()) return incrementExpression();
+        else if (assignmentPending()) return assignment();
+        else if (functionDefinitionPending()) return functionDefinition();
+        else if (loopPending()) return loop();
+        else return conditional();
     }
 
     private void conditional() {
@@ -253,55 +252,82 @@ public class Recognizer {
         }
     }
 
-    private void functionDefinition() {
-        if (debug) System.out.println("-- functionDefinition --");
-        consume(FUNC);
-        consume(IDENTIFIER);
-        consume(OPENPAREN);
-        if (functionParameterListPending()) functionParameterList();
-        consume(CLOSEPAREN);
-        if (check(RETURNS)) {
-            consume(RETURNS);
-            functionReturnType();
+    private Lexeme functionDefinition() {
+        Lexeme functionDef = functionDefinition();
+        Lexeme glue = consume(GLUE);
+        Lexeme identifier = consume(IDENTIFIER);
+        Lexeme statementList = statementList();
+
+        functionDef.setLeft(identifier);
+        functionDef.setRight(glue);
+
+        identifier.setLeft(consume(FUNC));
+        identifier.setRight(consume(OPENPAREN));
+
+        if (functionParameterListPending()) return functionParameterList();
+        else return glue;
+
+        glue.setLeft(consume(CLOSEPAREN));
+        glue.setRight(glue);
+
+        if (functionReturnTypePending()) {
+            glue.setLeft(glue);
+            glue.setLeft(consume(RETURNS));
+            glue.setRight(functionReturnType());
         }
-        consume(OPENBRACE);
-        statementList();
-        consume(CLOSEBRACE);
+
+        glue.setRight(statementList);
+        statementList.setLeft(consume(OPENBRACE));
+        statementList.setRight(consume(CLOSEBRACE));
+
+        return functionDef;
     }
 
-    private void functionReturnType() {
-        if (debug) System.out.println("-- functionReturnType --");
-        if (dataTypePending()) dataType();
-        else if (check(VOID)) consume(VOID);
+    private Lexeme functionReturnType() {
+        if (dataTypePending()) return dataType();
+        else return consume(VOID);
     }
 
-    private void functionParameterList() {
-        if (debug) System.out.println("-- functionParameterList --");
-        functionParameter();
-        if (check(COMMA)) {
-            consume(COMMA);
-            functionParameterList();
+    private Lexeme functionParameterList() {
+        Lexeme funcParamList = functionParameterList();
+        Lexeme glue = consume(GLUE);
+
+        funcParamList.setLeft(functionParameter());
+        funcParamList.setRight(glue);
+        glue.setLeft(consume(COMMA));
+        glue.setRight(functionParameterList());
+
+        return funcParamList;
+    }
+
+    private Lexeme functionParameter() {
+        Lexeme funcParam = functionParameter();
+        Lexeme glue = consume(GLUE);
+
+        funcParam.setLeft(consume(IDENTIFIER));
+        funcParam.setRight(glue);
+        glue.setLeft(consume(COLON));
+        glue.setRight(consume(dataType()));
+
+        return funcParam;
+    }
+
+    private Lexeme assignment() {
+        Lexeme identifier = consume(IDENTIFIER);
+        Lexeme assignmentOperator = assignmentOperator();
+        Lexeme expression = expression();
+
+        if (arrayReferencePending()) {
+            assignmentOperator.setLeft(arrayReference());
+        } else {
+            assignmentOperator.setLeft(identifier);
         }
+        assignmentOperator.setRight(expression);
+
+        return assignmentOperator;
     }
 
-    private void functionParameter() {
-        if (debug) System.out.println("-- functionParameter --");
-        consume(IDENTIFIER);
-        consume(COLON);
-        dataType();
-    }
-
-    private void assignment() {
-        if (debug) System.out.println("-- assignment --");
-        if (arrayReferencePending()) arrayReference();
-        else {
-            consume(IDENTIFIER);
-        }
-        assignmentOperator();
-        expression();
-    }
-
-    private void assignmentOperator() {
+    private Lexeme assignmentOperator() {
         if (debug) System.out.println("-- assignmentOperator --");
         if (check(ASSIGN)) consume(ASSIGN);
         else if (check(PLUSASSIGN)) consume(PLUSASSIGN);
@@ -310,6 +336,7 @@ public class Recognizer {
         else if (check(DIVIDEASSIGN)) consume(DIVIDEASSIGN);
         else if (check(MODASSIGN)) consume(MODASSIGN);
         else if (check(EXPASSIGN)) consume(EXPASSIGN);
+        return null;
     }
 
     private void initialization() {
@@ -363,129 +390,151 @@ public class Recognizer {
         consume(CLOSEBRACKET);
     }
 
-    private void dataType() {
-        if (debug) System.out.println("-- dataType --");
-        if (check(KW_STRING)) consume(KW_STRING);
-        else if (check(KW_INT)) consume(KW_INT);
-        else if (check(KW_FLOAT)) consume(KW_FLOAT);
-        else if (arrayTypePending()) arrayType();
+    private Lexeme dataType() {
+
+        if (check(KW_STRING)) return consume(KW_STRING);
+        else if (check(KW_INT)) return consume(KW_INT);
+        else if (check(KW_FLOAT)) return consume(KW_FLOAT);
+        else return arrayType();
     }
 
-    private void arrayType() {
-        if (debug) System.out.println("-- arrayType --");
-        consume(OPENBRACKET);
-        dataType();
-        consume(CLOSEBRACKET);
+    private Lexeme arrayType() {
+        Lexeme glue = consume(GLUE);
+
+        arrayType().setLeft(consume(OPENBRACKET));
+        arrayType().setRight(glue);
+
+        glue.setLeft(dataType());
+        glue.setRight(consume(CLOSEBRACKET));
+
+        return arrayType();
     }
 
-    private void expressionList() {
-        if (debug) System.out.println("-- expressionList --");
-        if (expressionPending()) expression();
+    private Lexeme expressionList() {
+        Lexeme glue = consume(GLUE);
+        Lexeme comma = consume(COMMA);
+        Lexeme expressionList = expressionList();
+
+        if (expressionPending()) return expression();
         if (check(COMMA)) {
-            consume(COMMA);
-            expressionList();
+            glue.setLeft(comma);
+            glue.setRight(expressionList);
         }
     }
 
-    private void expression() {
-        if (debug) System.out.println("-- expression --");
-        if (primaryPending()) primary();
-        else if (unaryPending()) unary();
-        else if (binaryPending()) binary();
+    private Lexeme expression() {
+        if (primaryPending()) return primary();
+        else if (unaryPending()) return unary();
+        else return binary();
     }
 
-    private void binary() {
-        if (debug) System.out.println("-- binary --");
-        expression();
-        binaryOperator();
-        expression();
+    private Lexeme binary() {
+        Lexeme binaryOperator = binaryOperator();
+
+        binaryOperator.setLeft(expression());
+        binaryOperator.setRight(expression());
+        return binaryOperator;
     }
 
-    private void binaryOperator() {
-        if (debug) System.out.println("-- binaryOperator --");
-        if (comparatorPending()) comparator();
-        else if (mathematicalOperatorPending()) mathematicalOperator();
+    private Lexeme binaryOperator() {
+        if (comparatorPending()) return comparator();
+        else return mathematicalOperator();
     }
 
-    private void mathematicalOperator() {
-        if (debug) System.out.println("-- mathematicalOperator --");
-        if (check(PLUS)) consume(PLUS);
-        else if (check(MINUS)) consume(MINUS);
-        else if (check(MINUS)) consume(MINUS);
-        else if (check(TIMES)) consume(TIMES);
-        else if (check(DIVIDE)) consume(DIVIDE);
-        else if (check(EXP)) consume(EXP);
-        else if (check(MOD)) consume(MOD);
+    private Lexeme mathematicalOperator() {
+        if (check(PLUS)) return consume(PLUS);
+        else if (check(MINUS)) return consume(MINUS);
+        else if (check(MINUS)) return consume(MINUS);
+        else if (check(TIMES)) return consume(TIMES);
+        else if (check(DIVIDE)) return consume(DIVIDE);
+        else if (check(EXP)) return consume(EXP);
+        else return consume(MOD);
     }
 
-    private void comparator() {
-        if (debug) System.out.println("-- comparator --");
-        if (check(GREATER)) consume(GREATER);
-        else if (check(GREATEREQUAL)) consume(GREATEREQUAL);
-        else if (check(LESS)) consume(LESS);
-        else if (check(LESSEQUAL)) consume(LESSEQUAL);
-        else if (check(NOTEQUAL)) consume(NOTEQUAL);
-        else if (check(EQUAL)) consume(EQUAL);
+    private Lexeme comparator() {
+        if (check(GREATER)) return consume(GREATER);
+        else if (check(GREATEREQUAL)) return consume(GREATEREQUAL);
+        else if (check(LESS)) return consume(LESS);
+        else if (check(LESSEQUAL)) return consume(LESSEQUAL);
+        else if (check(NOTEQUAL)) return consume(NOTEQUAL);
+        else if (check(EQUAL)) return consume(EQUAL);
     }
 
-    private void unary() {
-        if (debug) System.out.println("-- unary --");
+    private Lexeme unary() {
         if (prefixUnaryOperatorsPending()) {
-            prefixUnaryOperators();
-            expression();
-        } else if (incrementExpressionPending()) incrementExpression();
+            unary().setLeft(prefixUnaryOperators());
+            unary().setRight(expression());
+            return unary();
+        } else return incrementExpression();
     }
 
-    private void incrementExpression() {
-        if (debug) System.out.println("-- incrementExpression --");
-        consume(IDENTIFIER);
-        if (check(INCREMENT)) consume(INCREMENT);
-        else if (check(DECREMENT)) consume(DECREMENT);
+    private Lexeme incrementExpression() {
+        incrementExpression().setLeft(consume(IDENTIFIER));
+        if (check(INCREMENT)) incrementExpression().setRight(consume(INCREMENT));
+        else incrementExpression().setRight(consume(DECREMENT));
+        return incrementExpression();
     }
 
-    private void prefixUnaryOperators() {
-        if (debug) System.out.println("-- prefixUnaryOperators --");
-        if (check(PLUS)) consume(PLUS);
-        else if (check(MINUS)) consume(MINUS);
-        else if (check(NOT)) consume(NOT);
+    private Lexeme prefixUnaryOperators() {
+        if (check(PLUS)) return consume(PLUS);
+        else if (check(MINUS)) return consume(MINUS);
+        else return consume(NOT);
     }
 
-    private void primary() {
-        if (debug) System.out.println("-- primary --");
-        if (literalPending()) literal();
-        else if (groupingPending()) grouping();
-        else if (functionCallPending()) functionCall();
-        else if (arrayReferencePending()) arrayReference();
-        else if (check(IDENTIFIER)) consume(IDENTIFIER);
+    private Lexeme primary() {
+        if (literalPending()) return literal();
+        else if (groupingPending()) return grouping();
+        else if (functionCallPending()) return functionCall();
+        else if (arrayReferencePending()) return arrayReference();
+        else consume(IDENTIFIER); // TODO IS THIS RIGHT ?!
     }
 
-    private void arrayReference() {
-        if (debug) System.out.println("-- arrayReference --");
-        consume(IDENTIFIER);
-        consume(OPENBRACKET);
-        expression();
-        consume(CLOSEBRACKET);
+    private Lexeme arrayReference() {
+        Lexeme identifier = consume(IDENTIFIER);
+        Lexeme expression = expression();
+        Lexeme openBracket = consume(OPENBRACKET);
+        Lexeme closeBracket = consume(CLOSEBRACKET);
+
+
+        arrayReference().setLeft(identifier);
+        arrayReference().setRight(expression);
+
+        expression.setLeft(openBracket);
+        expression.setRight(closeBracket);
+
+        return arrayReference();
     }
 
-    private void functionCall() {
-        if (debug) System.out.println("-- functionCall --");
-        consume(IDENTIFIER);
-        consume(OPENPAREN);
-        if (argumentListPending()) argumentList();
-        consume(CLOSEPAREN);
+    private Lexeme functionCall() {
+        Lexeme glue = consume(GLUE);
+
+        functionCall().setLeft(glue);
+        glue.setLeft(consume(IDENTIFIER));
+        glue.setRight(consume(OPENPAREN));
+        functionCall().setRight(glue);
+        if (argumentListPending()) glue.setLeft(argumentList());
+        glue.setRight(consume(CLOSEPAREN));
+
+        return functionCall();
     }
 
-    private void argumentList() {
-        if (debug) System.out.println("-- argumentList --");
+    private Lexeme argumentList() {
+        Lexeme glue = consume(GLUE);
+
         if (check(IDENTIFIER)) {
-            consume(IDENTIFIER);
-            consume(COLON);
+            argumentList().setLeft(glue);
+            glue.setLeft(consume(IDENTIFIER));
+            glue.setRight(consume(COLON));
         }
-        expression();
+
+        argumentList().setRight(glue);
+        glue.setLeft(expression());
         if (check(COMMA)) {
-            consume(COMMA);
-            argumentList();
+            glue.setRight(glue);
+            glue.setLeft(consume(COMMA));
+            glue.setRight(argumentList());
         }
+
     }
 
     private void grouping() {
@@ -495,18 +544,16 @@ public class Recognizer {
         consume(CLOSEPAREN);
     }
 
-    private void literal() {
-        if (debug) System.out.println("-- literal --");
-        if (check(INT)) consume(INT);
-        else if (check(FLOAT)) consume(FLOAT);
-        else if (booleanLiteralPending()) booleanLiteral();
-        else if (check(STRING)) consume(STRING);
+    private Lexeme literal() {
+        if (check(INT)) return consume(INT);
+        else if (check(FLOAT)) return consume(FLOAT);
+        else if (booleanLiteralPending()) return booleanLiteral();
+        else return consume(STRING);
     }
 
-    private void booleanLiteral() {
-        if (debug) System.out.println("-- booleanLiteral --");
-        if (check(TRUE)) consume(TRUE);
-        else if (check(FALSE)) consume(FALSE);
+    private Lexeme booleanLiteral() {
+        if (check(TRUE)) return consume(TRUE);
+        else return consume(FALSE);
     }
 
     // ---------- Pending Methods ----------
@@ -787,6 +834,26 @@ public class Recognizer {
     private boolean booleanLiteralPending() {
         return check(TRUE)
                 || check(FALSE);
+    }
+
+
+    public static void printTree(Lexeme root) {
+        String printableTree = getPrintableTree(root, 1);
+        System.out.println(printableTree);
+    }
+
+    private static String getPrintableTree(Lexeme root, int level) {
+        String treeString = root.toSimpleString();
+
+        StringBuilder spacer = new StringBuilder("\n");
+        spacer.append(String.join("", Collections.nCopies(level, "\t")));
+
+        if (root.getLeft() != null)
+            treeString += spacer + "with left child: " + getPrintableTree(root.getLeft(), level + 1);
+        if (root.getRight() != null)
+            treeString += spacer + "and right child: " + getPrintableTree(root.getRight(), level + 1);
+
+        return treeString;
     }
 
 }

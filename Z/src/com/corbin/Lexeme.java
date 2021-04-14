@@ -7,6 +7,9 @@ public class Lexeme {
     private final String stringValue;
     private final Integer intValue;
     private final Float floatValue;
+    private Lexeme left;
+    private Lexeme right;
+
 
     // Constructor for specials characters, keywords, operators, etc.
     public Lexeme(TokenType type, int lineNumber) {
@@ -69,5 +72,25 @@ public class Lexeme {
                 + (intValue == null ? "" : (", Integer Value = " + intValue))
                 + (floatValue == null ? "" : (", Float Value = " + floatValue))
                 + (stringValue == null ? "" : (", String Value = " + stringValue)));
+    }
+
+    public String toSimpleString() {
+        return type.toString();
+    }
+
+    public Lexeme getLeft() {
+        return left;
+    }
+
+    public Lexeme getRight() {
+        return right;
+    }
+
+    public void setLeft(Lexeme left) {
+        this.left = left;
+    }
+
+    public void setRight(Lexeme right) {
+        this.right = right;
     }
 }

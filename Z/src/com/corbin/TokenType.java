@@ -20,6 +20,8 @@ public enum TokenType {
     // Comments
     LINECOMMENT,
 
+    GLUE,
+
     // End of file
     EOF
 }

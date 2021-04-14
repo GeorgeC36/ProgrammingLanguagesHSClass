@@ -89,6 +89,10 @@ public class Parser {
     }
 
     private Lexeme caseStatement() {
+        Lexeme switchStatement = switchStatement();
+        Lexeme openBrace = consume(OPENBRACE);
+        Lexeme caseStatement = caseStatement();
+        Lexeme closeBrace = consume(CLOSEBRACE);
         Lexeme colon = consume(COLON);
 
         if (check(CASE)) {
@@ -376,7 +380,7 @@ public class Parser {
         else return constantInitializer();
     }
 
-    private Lexeme constantInitializer() {    // TODO
+    private Lexeme constantInitializer() {
         Lexeme glue = new Lexeme(GLUE, 0);
 
         constantInitializer().setLeft(glue);
@@ -396,35 +400,41 @@ public class Parser {
         return constantInitializer();
     }
 
-    private Lexeme variableInitializer() {  //TODO NEED HELP 20
+    private Lexeme variableInitializer() {
         Lexeme glue = new Lexeme(GLUE, 0);
+        Lexeme glue2 = new Lexeme(GLUE, 0);
+        Lexeme result = new Lexeme(GLUE, 0);
+        Lexeme var = consume(VAR);
         Lexeme identifier = consume(IDENTIFIER);
+        Lexeme colon = consume(COLON);
+        Lexeme assign = consume(ASSIGN);
 
-        if (checkNext(COLON)) {
-            variableInitializer().setLeft(identifier);
-            variableInitializer().setRight(glue);
+        result.setRight(glue);
 
-            identifier.setLeft(consume(VAR));
-            identifier.setRight(consume(COLON));
+        if (check(COLON)) {
+            result.setLeft(identifier);
+
+            identifier.setLeft(var);
+            identifier.setRight(colon);
 
             glue.setLeft(dataType());
-            glue.setRight(glue);
+            glue.setRight(glue2);
 
-            glue.setLeft(consume(ASSIGN));
+            glue.setLeft(assign);
             glue.setRight(initializerExpression());
 
-            return variableInitializer();
+            return result;
 
         } else {
-            variableInitializer().setLeft(glue);
-            glue.setLeft(consume(VAR));
+            result.setLeft(glue);
+            glue.setLeft(var);
             glue.setRight(identifier);
 
-            variableInitializer().setRight(glue);
-            glue.setLeft(consume(ASSIGN));
+            result.setRight(glue2);
+            glue.setLeft(assign);
             glue.setRight(initializerExpression());
 
-            return variableInitializer();
+            return result;
         }
     }
 

@@ -5,7 +5,7 @@ import java.util.Collections;
 
 import static com.corbin.TokenType.*;
 
-public class Recognizer {
+public class Parser {
     private static final boolean debug = true;
 
     // ---------- Instance Variables ----------
@@ -16,7 +16,7 @@ public class Recognizer {
     private Lexeme right;
 
     // ---------- Constructor ----------
-    public Recognizer(ArrayList<Lexeme> lexemes) {
+    public Parser(ArrayList<Lexeme> lexemes) {
         this.lexemes = lexemes;
         advance();
     }
@@ -301,8 +301,7 @@ public class Recognizer {
         identifier.setLeft(consume(FUNC));
         identifier.setRight(consume(OPENPAREN));
 
-        if (functionParameterListPending()) return functionParameterList();
-        else return glue;
+        if (functionParameterListPending()) glue.setLeft(functionParameterList());
 
         glue.setLeft(consume(CLOSEPAREN));
         glue.setRight(glue);
@@ -379,41 +378,55 @@ public class Recognizer {
         else return constantInitializer();
     }
 
-    private void constantInitializer() {    // TODO
-        if (debug) System.out.println("-- constantInitializer --");
-        consume(CONST);
-        consume(IDENTIFIER);
-        if (check(COLON)) {
-            consume(COLON);
-            dataType();
-        }
-        consume(ASSIGN);
-        initializerExpression();
-    }
-
-    private void variableInitializer() {  //TODO NEED HELP 20
+    private Lexeme constantInitializer() {    // TODO
         Lexeme glue = consume(GLUE);
 
-        if (check(IDENTIFIER)) {
+        constantInitializer().setLeft(glue);
+        glue.setLeft(consume(CONST));
+        glue.setRight(consume(IDENTIFIER));
 
-        }
-
-
-        boolean legalSyntax = false;
-        consume(VAR);
-        consume(IDENTIFIER);
+        constantInitializer().setRight(glue);
         if (check(COLON)) {
-            consume(COLON);
-            dataType();
-            legalSyntax = true;
+            glue.setLeft(glue);
+            glue.setLeft(consume(COLON));
+            glue.setRight(dataType());
         }
-        if (check(ASSIGN)) {
-            consume(ASSIGN);
-            initializerExpression();
-            legalSyntax = true;
-        }
-        if (!legalSyntax) {
-            Z.error(currentLexeme.getLineNumber(), "Variable declaration without type or initialization");
+        glue.setRight(glue);
+        glue.setLeft(consume(ASSIGN));
+        glue.setRight(initializerExpression());
+
+        return constantInitializer();
+    }
+
+    private Lexeme variableInitializer() {  //TODO NEED HELP 20
+        Lexeme glue = consume(GLUE);
+        Lexeme identifier = consume(IDENTIFIER);
+
+        if (checkNext(COLON)) {
+            variableInitializer().setLeft(identifier);
+            variableInitializer().setRight(glue);
+
+            identifier.setLeft(consume(VAR));
+            identifier.setRight(consume(COLON));
+
+            glue.setLeft(dataType());
+            glue.setRight(glue);
+
+            glue.setLeft(consume(ASSIGN));
+            glue.setRight(initializerExpression());
+
+            return variableInitializer();
+
+        } else {
+            variableInitializer().setLeft(glue);
+            glue.setLeft(consume(VAR));
+            glue.setRight(identifier);
+
+            variableInitializer().setRight(glue);
+            glue.setLeft(consume(ASSIGN));
+            glue.setRight(initializerExpression());
+
+            return variableInitializer();
         }
     }
 

@@ -2,4 +2,5 @@
 
 var x = 5
 var y = "Hello, World!"
-var z = 4.0
+var z : float = 4.0
+var w : int

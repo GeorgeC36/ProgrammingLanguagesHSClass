@@ -28,11 +28,12 @@ public class Parser {
 
     private Lexeme consume(TokenType expected) {
         if (debug) System.out.println("-- consume " + expected + " --");
+        Lexeme lexeme = currentLexeme;
         if (check(expected)) advance();
         else {
             Z.error(currentLexeme, "Expected " + expected + " but found " + currentLexeme);
         }
-        return null;
+        return lexeme;
     }
 
     private boolean checkNext(TokenType type) {
@@ -55,13 +56,25 @@ public class Parser {
 
     // ---------- Consumption Methods ----------
     public Lexeme program() {
-        if (statementListPending()) return statementList();
+        if (statementListPending()) {
+            Lexeme statementList = statementList();
+            Lexeme program = new Lexeme(PROGRAM, statementList.getLineNumber());
+            program.setLeft(statementList);
+            // right = null
+            return program;
+        }
         else return null;
     }
 
     private Lexeme statementList() {    // TODO (CHECK)
-        if (statementPending()) return statement();
-        else return statementList();
+	Lexeme statementList = null;
+        while (statementPending()) {
+            Lexeme statement = statement();
+            statementList = new Lexeme(STATEMENT_LIST, statement.getLineNumber());
+            statementList.setLeft(statement);
+            statementList.setRight(statementList());
+        }
+        return statementList;
     }
 
     private Lexeme statement() {
@@ -401,39 +414,40 @@ public class Parser {
     }
 
     private Lexeme variableInitializer() {
-        Lexeme glue = new Lexeme(GLUE, 0);
-        Lexeme glue2 = new Lexeme(GLUE, 0);
-        Lexeme result = new Lexeme(GLUE, 0);
+        if (debug) System.out.println("-- variableInitializer --");
         Lexeme var = consume(VAR);
         Lexeme identifier = consume(IDENTIFIER);
+        Lexeme variableInitializer = new Lexeme(VARIABLE_INITIALIZER, var.getLineNumber());
 
-        result.setRight(glue);
+        Lexeme glue1 = new Lexeme(GLUE, 0);
+        variableInitializer.setRight(glue1);
 
         if (check(COLON)) {
-            result.setLeft(identifier);
-
+            variableInitializer.setLeft(identifier);
             identifier.setLeft(var);
             identifier.setRight(consume(COLON));
-
-            glue.setLeft(dataType());
-            glue.setRight(glue2);
-
-            glue.setLeft(consume(ASSIGN));
-            glue.setRight(initializerExpression());
-
-            return result;
-
+            glue1.setLeft(dataType());
+            if (check(ASSIGN)) {
+        	Lexeme glue2 = new Lexeme(GLUE, 0);
+        	glue1.setRight(glue2);
+        	glue2.setLeft(consume(ASSIGN));
+        	glue2.setRight(initializerExpression());
+            }
         } else {
-            result.setLeft(glue);
-            glue.setLeft(var);
-            glue.setRight(identifier);
+            Lexeme glue3 = new Lexeme(GLUE, 0);
+            variableInitializer.setLeft(glue3);
+            glue3.setLeft(var);
+            glue3.setRight(identifier);
 
-            result.setRight(glue2);
-            glue.setLeft(consume(ASSIGN));
-            glue.setRight(initializerExpression());
+            if (check(ASSIGN)) {
+        	glue1.setLeft(consume(ASSIGN));
+        	glue1.setRight(initializerExpression());
 
-            return result;
+            } else {
+        	Z.error(currentLexeme.getLineNumber(), "Variable declaration without type or initialization");
+            }
         }
+        return variableInitializer;
     }
 
     private Lexeme initializerExpression() {

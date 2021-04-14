@@ -12,8 +12,6 @@ public class Parser {
     ArrayList<Lexeme> lexemes;
     private int nextLexemeIndex = 0;
     private Lexeme currentLexeme;
-    private Lexeme left;
-    private Lexeme right;
 
     // ---------- Constructor ----------
     public Parser(ArrayList<Lexeme> lexemes) {
@@ -117,7 +115,7 @@ public class Parser {
     }
 
     private Lexeme ifElseStatements() {
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
 
         ifElseStatements().setLeft(ifStatement());
         ifElseStatements().setRight(glue);
@@ -145,7 +143,7 @@ public class Parser {
     }
 
     private Lexeme ifStatement() {
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
         Lexeme statementList = statementList();
         Lexeme booleanExpression = booleanExpression();
 
@@ -173,7 +171,7 @@ public class Parser {
     }
 
     private Lexeme whileLoop() {
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
         Lexeme booleanExpression = booleanExpression();
         Lexeme statementList = statementList();
 
@@ -193,7 +191,7 @@ public class Parser {
     }
 
     private Lexeme forIn() {
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
         Lexeme identifier = consume(IDENTIFIER);
         Lexeme statementList = statementList();
 
@@ -227,7 +225,7 @@ public class Parser {
     }
 
     private Lexeme forLoop() {
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
         Lexeme semi = consume(SEMICOLON);
         Lexeme cParen = consume(CLOSEPAREN);
 
@@ -291,7 +289,7 @@ public class Parser {
 
     private Lexeme functionDefinition() {
         Lexeme functionDef = functionDefinition();
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
         Lexeme identifier = consume(IDENTIFIER);
         Lexeme statementList = statementList();
 
@@ -326,7 +324,7 @@ public class Parser {
 
     private Lexeme functionParameterList() {
         Lexeme funcParamList = functionParameterList();
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
 
         funcParamList.setLeft(functionParameter());
         funcParamList.setRight(glue);
@@ -338,7 +336,7 @@ public class Parser {
 
     private Lexeme functionParameter() {
         Lexeme funcParam = functionParameter();
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
 
         funcParam.setLeft(consume(IDENTIFIER));
         funcParam.setRight(glue);
@@ -379,7 +377,7 @@ public class Parser {
     }
 
     private Lexeme constantInitializer() {    // TODO
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
 
         constantInitializer().setLeft(glue);
         glue.setLeft(consume(CONST));
@@ -399,7 +397,7 @@ public class Parser {
     }
 
     private Lexeme variableInitializer() {  //TODO NEED HELP 20
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
         Lexeme identifier = consume(IDENTIFIER);
 
         if (checkNext(COLON)) {
@@ -436,7 +434,7 @@ public class Parser {
     }
 
     private Lexeme arrayInitializer() {
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
 
         arrayInitializer().setLeft(consume(OPENBRACKET));
         arrayInitializer().setRight(glue);
@@ -454,7 +452,7 @@ public class Parser {
     }
 
     private Lexeme arrayType() {
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
 
         arrayType().setLeft(consume(OPENBRACKET));
         arrayType().setRight(glue);
@@ -466,7 +464,7 @@ public class Parser {
     }
 
     private Lexeme expressionList() {
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
         Lexeme comma = consume(COMMA);
         Lexeme expressionList = expressionList();
 
@@ -563,7 +561,7 @@ public class Parser {
     }
 
     private Lexeme functionCall() {
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
 
         functionCall().setLeft(glue);
         glue.setLeft(consume(IDENTIFIER));
@@ -576,7 +574,7 @@ public class Parser {
     }
 
     private Lexeme argumentList() {
-        Lexeme glue = consume(GLUE);
+        Lexeme glue = new Lexeme(GLUE, 0);
 
         if (check(IDENTIFIER)) {
             argumentList().setLeft(glue);

@@ -1,0 +1,13 @@
+// Functions
+
+func greet(person: String) -> String {
+}
+greet("George")
+
+func bye(number: int) {
+}
+bye(8)
+
+func getName() {
+}
+getName()

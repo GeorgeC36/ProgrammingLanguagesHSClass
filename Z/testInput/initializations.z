@@ -1,0 +1,5 @@
+// Initializations
+
+var x = 5
+var y = "Hello, World!"
+var z = 4.0

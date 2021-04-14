@@ -6,7 +6,7 @@ import java.util.Collections;
 import static com.corbin.TokenType.*;
 
 public class Parser {
-    private static final boolean debug = true;
+    private static final boolean debug = false;
 
     // ---------- Instance Variables ----------
     ArrayList<Lexeme> lexemes;
@@ -406,8 +406,6 @@ public class Parser {
         Lexeme result = new Lexeme(GLUE, 0);
         Lexeme var = consume(VAR);
         Lexeme identifier = consume(IDENTIFIER);
-        Lexeme colon = consume(COLON);
-        Lexeme assign = consume(ASSIGN);
 
         result.setRight(glue);
 
@@ -415,12 +413,12 @@ public class Parser {
             result.setLeft(identifier);
 
             identifier.setLeft(var);
-            identifier.setRight(colon);
+            identifier.setRight(consume(COLON));
 
             glue.setLeft(dataType());
             glue.setRight(glue2);
 
-            glue.setLeft(assign);
+            glue.setLeft(consume(ASSIGN));
             glue.setRight(initializerExpression());
 
             return result;
@@ -431,7 +429,7 @@ public class Parser {
             glue.setRight(identifier);
 
             result.setRight(glue2);
-            glue.setLeft(assign);
+            glue.setLeft(consume(ASSIGN));
             glue.setRight(initializerExpression());
 
             return result;

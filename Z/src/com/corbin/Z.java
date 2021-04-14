@@ -36,8 +36,9 @@ public class Z {
         Lexer lexer = new Lexer(sourceCode);
         ArrayList<Lexeme> lexemes = lexer.lex();
         printLexemes(lexemes);
-        Parser recognizer = new Parser(lexemes);
-        recognizer.program();
+        Parser parser = new Parser(lexemes);
+        Lexeme program = parser.program();
+        Parser.printTree(program);
     }
 
     private static void printLexemes(ArrayList<Lexeme> lexemes) {

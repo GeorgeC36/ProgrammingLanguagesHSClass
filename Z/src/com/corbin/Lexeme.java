@@ -9,6 +9,7 @@ public class Lexeme {
     private final Float floatValue;
     private Lexeme left;
     private Lexeme right;
+    private boolean isConstant;
 
 
     // Constructor for specials characters, keywords, operators, etc.
@@ -45,6 +46,13 @@ public class Lexeme {
         this.floatValue = floatValue;
         this.stringValue = null;
         this.intValue = null;
+    }
+
+    public boolean equals(Lexeme other) {
+        return this.type == TokenType.IDENTIFIER &&
+                this.type == other.type &&
+                this.stringValue != null &&
+                this.stringValue.equals(other.stringValue);
     }
 
     public TokenType getType() {
@@ -86,11 +94,19 @@ public class Lexeme {
         return right;
     }
 
+    public boolean isConstant() {
+        return isConstant;
+    }
+
     public void setLeft(Lexeme left) {
         this.left = left;
     }
 
     public void setRight(Lexeme right) {
         this.right = right;
+    }
+
+    public void setIsConstant(boolean isConstant) {
+        this.isConstant = isConstant;
     }
 }

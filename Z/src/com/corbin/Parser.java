@@ -287,7 +287,7 @@ public class Parser {
     }
 
     private Lexeme range() {
-	Lexeme startingValue = expression();
+        Lexeme startingValue = expression();
         Lexeme ellipsis = consume(ELLIPSIS);
 
         ellipsis.setLeft(startingValue);
@@ -478,7 +478,9 @@ public class Parser {
         Lexeme glue1 = new Lexeme(GLUE, currentLexeme.getLineNumber());
         constantInitializer.setLeft(glue1);
         glue1.setLeft(consume(CONST));
-        glue1.setRight(consume(IDENTIFIER));
+        Lexeme identifier = consume(IDENTIFIER);
+        identifier.setIsConstant(true);
+        glue1.setRight(identifier);
 
         Lexeme glue2 = new Lexeme(GLUE, currentLexeme.getLineNumber());
         constantInitializer.setRight(glue2);
@@ -717,12 +719,12 @@ public class Parser {
     }
 
     private Lexeme grouping() {
-	Lexeme grouping = new Lexeme(GROUPING, currentLexeme.getLineNumber());
-	grouping.setLeft(consume(OPENPAREN));
-	Lexeme expression = expression();
+        Lexeme grouping = new Lexeme(GROUPING, currentLexeme.getLineNumber());
+        grouping.setLeft(consume(OPENPAREN));
+        Lexeme expression = expression();
         Lexeme closeParen = consume(CLOSEPAREN);
         grouping.setRight(closeParen);
-        
+
         closeParen.setLeft(expression);
 
         return grouping;
@@ -1027,33 +1029,33 @@ public class Parser {
     }
 
     private static String getPrintableTree(Lexeme root, int level) {
-	String treeString = root.toSimpleString();
-	switch (root.getType()) {
-	case IDENTIFIER:
-	    treeString += " (" + root.getStringValue() + ")";
-	    break;
-	case STRING:
-	    treeString += " (\"" + root.getStringValue() + "\")";
-	    break;
-	case INT:
-	    treeString += " (" + root.getIntValue() + ")";
-	    break;
-	case FLOAT:
-	    treeString += " (" + root.getFloatValue() + ")";
-	    break;
-	default:
-	    break;
-	}
+        String treeString = root.toSimpleString();
+        switch (root.getType()) {
+            case IDENTIFIER:
+                treeString += " (" + root.getStringValue() + ")";
+                break;
+            case STRING:
+                treeString += " (\"" + root.getStringValue() + "\")";
+                break;
+            case INT:
+                treeString += " (" + root.getIntValue() + ")";
+                break;
+            case FLOAT:
+                treeString += " (" + root.getFloatValue() + ")";
+                break;
+            default:
+                break;
+        }
 
-	StringBuilder spacer = new StringBuilder("\n");
-	spacer.append(String.join("", Collections.nCopies(level, "    ")));
-	
-	if (root.getLeft() != null)
-	    treeString += spacer + "with left child: " + getPrintableTree(root.getLeft(), level + 1);
-	if (root.getRight() != null)
-	    treeString += spacer + "and right child: " + getPrintableTree(root.getRight(), level + 1);
+        StringBuilder spacer = new StringBuilder("\n");
+        spacer.append(String.join("", Collections.nCopies(level, "    ")));
 
-	return treeString;
+        if (root.getLeft() != null)
+            treeString += spacer + "with left child: " + getPrintableTree(root.getLeft(), level + 1);
+        if (root.getRight() != null)
+            treeString += spacer + "and right child: " + getPrintableTree(root.getRight(), level + 1);
+
+        return treeString;
     }
 
 }

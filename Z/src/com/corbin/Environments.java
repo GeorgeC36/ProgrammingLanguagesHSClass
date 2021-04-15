@@ -22,12 +22,16 @@ public class Environments {
 
     public void insert(Lexeme identifier, Lexeme value) {
         identifiers.add(identifier);
-        values.add(value);      // Think about re-declaring a variable (evaluator)
+        values.add(value);
     }
 
     public void update(Lexeme target, Lexeme newValue) {
         for (int i = 0; i < identifiers.size(); i++) {
             if (identifiers.get(i).equals(target)) {
+                if (identifiers.get(i).isConstant()) {
+                    Z.error(target, "Identifier cannot be modified");
+                    return;
+                }
                 values.set(i, newValue);
                 return;
             }

@@ -96,26 +96,31 @@ public class Parser {
         Lexeme glue1 = new Lexeme(GLUE, currentLexeme.getLineNumber());
         switchCaseStatements.setRight(glue1);
         glue1.setLeft(consume(OPENBRACE));
-        Lexeme glue2 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        glue1.setRight(glue2);
+        Lexeme prior = glue1;
 
-        glue2.setLeft(caseStatement());
-        glue2.setRight(consume(CLOSEBRACE));
+        while (caseStatementPending()) {
+            Lexeme glue2 = new Lexeme(GLUE, currentLexeme.getLineNumber());
+            prior.setRight(glue2);
+            glue2.setLeft(caseStatement());
+            prior = glue2;
+        }
+        prior.setRight(consume(CLOSEBRACE));
 
         return switchCaseStatements;
     }
 
     private Lexeme caseStatement() {
         Lexeme caseStatement = new Lexeme(CASE_STATEMENT, currentLexeme.getLineNumber());
-        Lexeme expression = expression();
 
         if (check(CASE)) {
             caseStatement.setLeft(consume(CASE));
+            Lexeme expression = expression();
             Lexeme colon = consume(COLON);
             caseStatement.setRight(colon);
             colon.setLeft(expression);
             colon.setRight(statementList());
         } else {
+            Lexeme defaultCase = consume(DEFAULT);
             Lexeme colon = consume(COLON);
             caseStatement.setLeft(colon);
             colon.setLeft(consume(DEFAULT));
@@ -1018,7 +1023,7 @@ public class Parser {
         String treeString = root.toSimpleString();
 
         StringBuilder spacer = new StringBuilder("\n");
-        spacer.append(String.join("", Collections.nCopies(level, "\t")));
+        spacer.append(String.join("", Collections.nCopies(level, "    ")));
 
         if (root.getLeft() != null)
             treeString += spacer + "with left child: " + getPrintableTree(root.getLeft(), level + 1);

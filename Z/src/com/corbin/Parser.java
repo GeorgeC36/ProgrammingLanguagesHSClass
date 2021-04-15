@@ -303,33 +303,38 @@ public class Parser {
     }
 
     private Lexeme functionDefinition() {
-        Lexeme functionDef = functionDefinition();
-        Lexeme glue = new Lexeme(GLUE, 0);
+        if (debug) System.out.println("-- functionDefinition --");
+        Lexeme functionDefinition = new Lexeme(FUNCTION_DEFINITION, currentLexeme.getLineNumber());
+        Lexeme func = consume(FUNC);
         Lexeme identifier = consume(IDENTIFIER);
-        Lexeme statementList = statementList();
 
-        functionDef.setLeft(identifier);
-        functionDef.setRight(glue);
+        functionDefinition.setLeft(identifier);
+        identifier.setLeft(func);
+        identifier.setRight(consume(CLOSEPAREN));
 
-        identifier.setLeft(consume(FUNC));
-        identifier.setRight(consume(OPENPAREN));
+        Lexeme glue1 = new Lexeme(GLUE, 0);
+        functionDefinition.setRight(glue1);
 
-        if (functionParameterListPending()) glue.setLeft(functionParameterList());
-
-        glue.setLeft(consume(CLOSEPAREN));
-        glue.setRight(glue);
-
-        if (functionReturnTypePending()) {
-            glue.setLeft(glue);
-            glue.setLeft(consume(RETURNS));
-            glue.setRight(functionReturnType());
+        if (functionParameterListPending()) glue1.setLeft(functionParameterList());
+        Lexeme endDef = consume(CLOSEPAREN);
+        glue1.setRight(endDef);
+        if (check(RETURNS)) {
+            Lexeme glue2 = new Lexeme(GLUE, 0);
+            endDef.setLeft(glue2);
+            glue2.setLeft(consume(RETURNS));
+            glue2.setRight(functionReturnType());
         }
 
-        glue.setRight(statementList);
-        statementList.setLeft(consume(OPENBRACE));
-        statementList.setRight(consume(CLOSEBRACE));
+        Lexeme glue3 = new Lexeme(GLUE, 0);
+        endDef.setRight(glue3);
+        glue3.setLeft(consume(OPENBRACE));
+        Lexeme glue4 = new Lexeme(GLUE, 0);
+        glue3.setRight(glue4);
+        
+        glue4.setLeft(statementList());
+        glue4.setRight(consume(CLOSEBRACE));
 
-        return functionDef;
+        return functionDefinition;
     }
 
     private Lexeme functionReturnType() {
@@ -338,27 +343,27 @@ public class Parser {
     }
 
     private Lexeme functionParameterList() {
-        Lexeme funcParamList = functionParameterList();
-        Lexeme glue = new Lexeme(GLUE, 0);
+        Lexeme functionParameterList = new Lexeme(FUNCTION_PARAMETER_LIST, currentLexeme.getLineNumber());
+        functionParameterList.setLeft(functionParameter());
+        if (check(COMMA)) {
+            Lexeme glue1 = new Lexeme(GLUE, 0);
+            functionParameterList.setRight(glue1);
+            glue1.setLeft(consume(COMMA));
+            glue1.setRight(functionParameterList());
 
-        funcParamList.setLeft(functionParameter());
-        funcParamList.setRight(glue);
-        glue.setLeft(consume(COMMA));
-        glue.setRight(functionParameterList());
-
-        return funcParamList;
+        return functionParameterList;
     }
 
     private Lexeme functionParameter() {
-        Lexeme funcParam = functionParameter();
-        Lexeme glue = new Lexeme(GLUE, 0);
+        Lexeme functionParameter = new Lexeme(FUNCTION_PARAMETER, currentLexeme.getLineNumber());
+        functionParameter.setLeft(consume(IDENTIFIER));
+        Lexeme glue1 = new Lexeme(GLUE, 0);
+        functionParameter.setRight(glue1);
 
-        funcParam.setLeft(consume(IDENTIFIER));
-        funcParam.setRight(glue);
-        glue.setLeft(consume(COLON));
-        glue.setRight(dataType());
+        glue1.setLeft(consume(COLON));
+        glue1.setRight(dataType());
 
-        return funcParam;
+        return functionParameter;
     }
 
     private Lexeme assignment() {
@@ -506,9 +511,10 @@ public class Parser {
     }
 
     private Lexeme binary() {
+	Lexeme leftExpression = expression();
         Lexeme binaryOperator = binaryOperator();
 
-        binaryOperator.setLeft(expression());
+        binaryOperator.setLeft(leftExpression);
         binaryOperator.setRight(expression());
         return binaryOperator;
     }
@@ -520,7 +526,6 @@ public class Parser {
 
     private Lexeme mathematicalOperator() {
         if (check(PLUS)) return consume(PLUS);
-        else if (check(MINUS)) return consume(MINUS);
         else if (check(MINUS)) return consume(MINUS);
         else if (check(TIMES)) return consume(TIMES);
         else if (check(DIVIDE)) return consume(DIVIDE);

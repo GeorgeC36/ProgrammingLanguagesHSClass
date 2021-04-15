@@ -1027,15 +1027,41 @@ public class Parser {
     private static String getPrintableTree(Lexeme root, int level) {
         String treeString = root.toSimpleString();
 
-        StringBuilder spacer = new StringBuilder("\n");
-        spacer.append(String.join("", Collections.nCopies(level, "    ")));
-
-        if (root.getLeft() != null)
-            treeString += spacer + "with left child: " + getPrintableTree(root.getLeft(), level + 1);
-        if (root.getRight() != null)
-            treeString += spacer + "and right child: " + getPrintableTree(root.getRight(), level + 1);
+        treeString += getLine(root.getLeft(), "left", level + 1);
+        treeString += getLine(root.getRight(), "right", level + 1);
+//        if (root.getLeft() != null)
+//            treeString += spacer + "with left child: " + getPrintableTree(root.getLeft(), level + 1);
+//        if (root.getRight() != null)
+//            treeString += spacer + "and right child: " + getPrintableTree(root.getRight(), level + 1);
 
         return treeString;
+    }
+
+    private static String getLine(Lexeme val, String side, int level) {
+
+	StringBuilder spacer = new StringBuilder("\n");
+	spacer.append(String.join("", Collections.nCopies(level, "    ")));
+	String line = "";
+	if (val != null) {
+	    line = spacer + "with " + side + " child: " + getPrintableTree(val, level + 1);
+	    switch (val.getType()) {
+	    case IDENTIFIER:
+		line += " (" + val.getStringValue() + ")";
+		break;
+	    case STRING:
+		line += " (" + val.getStringValue() + ")";
+		break;
+	    case INT:
+		line += " (" + val.getIntValue() + ")";
+		break;
+	    case FLOAT:
+		line += " (" + val.getFloatValue() + ")";
+		break;
+	    default:
+		break;
+	    }
+	}
+	return line;
     }
 
 }

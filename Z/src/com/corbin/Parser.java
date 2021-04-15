@@ -22,12 +22,12 @@ public class Parser {
     // ---------- Utility Methods ----------
     private boolean check(TokenType expected) {
 
-        if (debug) System.out.println("    -- check: looking for " + expected + ", have " + currentLexeme + " --");
+//        if (debug) System.out.println("    -- check: looking for " + expected + ", have " + currentLexeme + " --");
         return currentLexeme.getType() == expected;
     }
 
     private Lexeme consume(TokenType expected) {
-        if (debug) System.out.println("-- consume " + expected + " --");
+//        if (debug) System.out.println("-- consume " + expected + " --");
         Lexeme lexeme = currentLexeme;
         if (check(expected)) advance();
         else {
@@ -40,8 +40,8 @@ public class Parser {
         if (nextLexemeIndex >= lexemes.size()) {
             return false;
         } else {
-            if (debug)
-                System.out.println("    -- checkNext: looking for " + type + ", next is " + lexemes.get(nextLexemeIndex).getType() + " --");
+//            if (debug)
+//                System.out.println("    -- checkNext: looking for " + type + ", next is " + lexemes.get(nextLexemeIndex).getType() + " --");
             return lexemes.get(nextLexemeIndex).getType() == type;
         }
     }
@@ -51,7 +51,7 @@ public class Parser {
             currentLexeme = lexemes.get(nextLexemeIndex);
             nextLexemeIndex++;
         } while (currentLexeme.getType() == LINECOMMENT);
-        if (debug) System.out.println("-- advance: currentLexeme = " + currentLexeme + " --");
+//        if (debug) System.out.println("-- advance: currentLexeme = " + currentLexeme + " --");
     }
 
     // ---------- Consumption Methods ----------
@@ -571,14 +571,13 @@ public class Parser {
     }
 
     private Lexeme expressionList() {
+        Lexeme expressionList = new Lexeme(EXPRESSION_LIST, currentLexeme.getLineNumber());
         Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        Lexeme comma = consume(COMMA);
-        Lexeme expressionList = expressionList();
 
         expressionList.setLeft(expression());
         if (check(COMMA)) {
-            glue.setLeft(comma);
-            glue.setRight(expressionList);
+            glue.setLeft(consume(COMMA));
+            glue.setRight(expressionList());
         }
 
         return expressionList;
@@ -663,12 +662,16 @@ public class Parser {
 
     private Lexeme arrayReference() {
         Lexeme arrayReference = new Lexeme(ARRAY_REFERENCE, currentLexeme.getLineNumber());
+        Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
         arrayReference.setLeft(consume(IDENTIFIER));
-        Lexeme expression = expression();
-        arrayReference.setRight(expression);
+        arrayReference.setRight(glue);
 
-        expression.setLeft(consume(OPENBRACKET));
-        expression.setRight(consume(CLOSEBRACKET));
+        glue.setLeft(consume(OPENBRACKET));
+        Lexeme expression = expression();
+        Lexeme closeBracket = consume(CLOSEBRACKET);
+        glue.setRight(closeBracket);
+
+        closeBracket.setLeft(expression);
 
         return arrayReference;
     }
@@ -1001,7 +1004,7 @@ public class Parser {
     }
 
     private boolean literalPending() {
-        if (debug) System.out.println("  -- literalPending --");
+//        if (debug) System.out.println("  -- literalPending --");
         return check(INT)
                 || check(FLOAT)
                 || booleanLiteralPending()

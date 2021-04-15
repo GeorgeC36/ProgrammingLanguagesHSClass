@@ -1,0 +1,6 @@
+// Initializations
+
+const x = 5
+const y = "Hello, World!"
+const w : int
+const z : float = 4.0

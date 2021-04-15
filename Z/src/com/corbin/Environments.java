@@ -47,7 +47,6 @@ public class Environments {
 
         Z.error(target, "Variable " + target + "is undefined.");
         return null;
-        a
     }
 
     // -------------- Helper Methods --------------

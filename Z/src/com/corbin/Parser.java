@@ -716,12 +716,14 @@ public class Parser {
     }
 
     private Lexeme grouping() {
-        Lexeme openParen = consume(OPENPAREN);
-        Lexeme expression = expression();
-        expression.setLeft(openParen);
-        expression.setRight(consume(CLOSEPAREN));
+	Lexeme grouping = new Lexeme(GROUPING, currentLexeme.getLineNumber());
+	grouping.setLeft(consume(OPENPAREN));
+        Lexeme closeParen = consume(CLOSEPAREN);
+        grouping.setRight(closeParen);
+        
+        closeParen.setLeft(expression());
 
-        return expression;
+        return grouping;
     }
 
     private Lexeme literal() {

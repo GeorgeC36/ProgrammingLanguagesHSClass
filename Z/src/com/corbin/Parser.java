@@ -107,12 +107,13 @@ public class Parser {
 
     private Lexeme caseStatement() {
         Lexeme caseStatement = new Lexeme(CASE_STATEMENT, currentLexeme.getLineNumber());
+        Lexeme expression = expression();
 
         if (check(CASE)) {
             caseStatement.setLeft(consume(CASE));
             Lexeme colon = consume(COLON);
             caseStatement.setRight(colon);
-            colon.setLeft(expression());
+            colon.setLeft(expression);
             colon.setRight(statementList());
         } else {
             Lexeme colon = consume(COLON);

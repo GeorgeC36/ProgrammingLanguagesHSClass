@@ -719,10 +719,11 @@ public class Parser {
     private Lexeme grouping() {
 	Lexeme grouping = new Lexeme(GROUPING, currentLexeme.getLineNumber());
 	grouping.setLeft(consume(OPENPAREN));
+	Lexeme expression = expression();
         Lexeme closeParen = consume(CLOSEPAREN);
         grouping.setRight(closeParen);
         
-        closeParen.setLeft(expression());
+        closeParen.setLeft(expression);
 
         return grouping;
     }
@@ -1032,7 +1033,7 @@ public class Parser {
 	    treeString += " (" + root.getStringValue() + ")";
 	    break;
 	case STRING:
-	    treeString += " (" + root.getStringValue() + ")";
+	    treeString += " (\"" + root.getStringValue() + "\")";
 	    break;
 	case INT:
 	    treeString += " (" + root.getIntValue() + ")";
@@ -1046,6 +1047,7 @@ public class Parser {
 
 	StringBuilder spacer = new StringBuilder("\n");
 	spacer.append(String.join("", Collections.nCopies(level, "    ")));
+	
 	if (root.getLeft() != null)
 	    treeString += spacer + "with left child: " + getPrintableTree(root.getLeft(), level + 1);
 	if (root.getRight() != null)
@@ -1053,4 +1055,5 @@ public class Parser {
 
 	return treeString;
     }
+
 }

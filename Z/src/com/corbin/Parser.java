@@ -123,7 +123,7 @@ public class Parser {
             Lexeme defaultCase = consume(DEFAULT);
             Lexeme colon = consume(COLON);
             caseStatement.setLeft(colon);
-            colon.setLeft(consume(DEFAULT));
+            colon.setLeft(defaultCase);
             colon.setRight(statementList());
         }
 

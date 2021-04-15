@@ -1,5 +1,5 @@
 // Arrays
 
-var shoppingList: [String] = ["Eggs", "Milk"]
 var a = shoppingList[0]
+var shoppingList: [String] = ["Eggs", "Milk"]
 shoppingList[1] = "Bacon"

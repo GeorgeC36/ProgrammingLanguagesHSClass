@@ -4,3 +4,11 @@ if (x > z) {
 } else if y {
 } else {
 }
+
+if (y > z) {
+  a++
+} else if y {
+  b--
+} else {
+  c = 7
+}

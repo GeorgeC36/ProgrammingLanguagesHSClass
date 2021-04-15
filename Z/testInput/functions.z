@@ -5,6 +5,7 @@ func greet(person: String) -> String {
 greet("George")
 
 func bye(number: int) {
+  var a = 3
 }
 bye(8)
 

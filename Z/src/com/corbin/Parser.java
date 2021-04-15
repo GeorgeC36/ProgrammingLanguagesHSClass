@@ -248,7 +248,7 @@ public class Parser {
         whileLoop.setRight(glue3);
         glue3.setLeft(consume(OPENBRACE));
         Lexeme glue4 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        glue4.setRight(glue4);
+        glue3.setRight(glue4);
 
         glue4.setLeft(statementList());
         glue4.setRight(consume(CLOSEBRACE));
@@ -273,7 +273,7 @@ public class Parser {
         glue.setRight(glue2);
         glue2.setLeft(consume(OPENBRACE));
         Lexeme glue3 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        glue3.setRight(glue3);
+        glue2.setRight(glue3);
 
         glue3.setLeft(statementList());
         glue3.setRight(consume(CLOSEBRACE));
@@ -287,9 +287,10 @@ public class Parser {
     }
 
     private Lexeme range() {
+	Lexeme startingValue = expression();
         Lexeme ellipsis = consume(ELLIPSIS);
 
-        ellipsis.setLeft(expression());
+        ellipsis.setLeft(startingValue);
         ellipsis.setRight(expression());
 
         return ellipsis;
@@ -310,13 +311,13 @@ public class Parser {
         forLoop.setRight(semi1);
 
         Lexeme booleanExpression = null;
-        if (assignmentPending()) booleanExpression = booleanExpression();
+        if (booleanExpressionPending()) booleanExpression = booleanExpression();
         Lexeme semi2 = consume(SEMICOLON);
         semi2.setLeft(booleanExpression);
         semi1.setRight(semi2);
 
         Lexeme loopIncrement = null;
-        if (assignmentPending()) loopIncrement = loopIncrement();
+        if (loopIncrementPending()) loopIncrement = loopIncrement();
         Lexeme closeParen = consume(CLOSEPAREN);
         closeParen.setLeft(loopIncrement);
         semi2.setRight(closeParen);
@@ -325,7 +326,7 @@ public class Parser {
         closeParen.setRight(glue2);
         glue2.setLeft(consume(OPENBRACE));
         Lexeme glue3 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        glue3.setRight(glue3);
+        glue2.setRight(glue3);
 
         glue3.setLeft(statementList());
         glue3.setRight(consume(CLOSEBRACE));
@@ -1025,43 +1026,31 @@ public class Parser {
     }
 
     private static String getPrintableTree(Lexeme root, int level) {
-        String treeString = root.toSimpleString();
-
-        treeString += getLine(root.getLeft(), "left", level + 1);
-        treeString += getLine(root.getRight(), "right", level + 1);
-//        if (root.getLeft() != null)
-//            treeString += spacer + "with left child: " + getPrintableTree(root.getLeft(), level + 1);
-//        if (root.getRight() != null)
-//            treeString += spacer + "and right child: " + getPrintableTree(root.getRight(), level + 1);
-
-        return treeString;
-    }
-
-    private static String getLine(Lexeme val, String side, int level) {
+	String treeString = root.toSimpleString();
+	switch (root.getType()) {
+	case IDENTIFIER:
+	    treeString += " (" + root.getStringValue() + ")";
+	    break;
+	case STRING:
+	    treeString += " (" + root.getStringValue() + ")";
+	    break;
+	case INT:
+	    treeString += " (" + root.getIntValue() + ")";
+	    break;
+	case FLOAT:
+	    treeString += " (" + root.getFloatValue() + ")";
+	    break;
+	default:
+	    break;
+	}
 
 	StringBuilder spacer = new StringBuilder("\n");
 	spacer.append(String.join("", Collections.nCopies(level, "    ")));
-	String line = "";
-	if (val != null) {
-	    line = spacer + "with " + side + " child: " + getPrintableTree(val, level + 1);
-	    switch (val.getType()) {
-	    case IDENTIFIER:
-		line += " (" + val.getStringValue() + ")";
-		break;
-	    case STRING:
-		line += " (" + val.getStringValue() + ")";
-		break;
-	    case INT:
-		line += " (" + val.getIntValue() + ")";
-		break;
-	    case FLOAT:
-		line += " (" + val.getFloatValue() + ")";
-		break;
-	    default:
-		break;
-	    }
-	}
-	return line;
-    }
+	if (root.getLeft() != null)
+	    treeString += spacer + "with left child: " + getPrintableTree(root.getLeft(), level + 1);
+	if (root.getRight() != null)
+	    treeString += spacer + "and right child: " + getPrintableTree(root.getRight(), level + 1);
 
+	return treeString;
+    }
 }

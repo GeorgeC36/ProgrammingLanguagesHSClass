@@ -1,9 +1,11 @@
 // Loops
 
 for (i = 0; i < 5; i++) {
+   a=3
 }
 var i = 1
 for i in 1...5 {
+  b=7
 }
 while (i < 6) {
     i++

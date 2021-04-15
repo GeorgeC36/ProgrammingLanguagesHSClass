@@ -391,7 +391,7 @@ public class Parser {
 
         functionDefinition.setLeft(identifier);
         identifier.setLeft(func);
-        identifier.setRight(consume(CLOSEPAREN));
+        identifier.setRight(consume(OPENPAREN));
 
         Lexeme glue1 = new Lexeme(GLUE, currentLexeme.getLineNumber());
         functionDefinition.setRight(glue1);

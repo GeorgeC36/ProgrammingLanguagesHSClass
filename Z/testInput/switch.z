@@ -1,1 +1,12 @@
 switch month {
+            case 1:  monthString = "January"
+
+            case 2:  monthString = "February"
+
+            case 3:  monthString = "March"
+
+            case 4:  monthString = "April"
+
+            default: monthString = "Invalid month"
+
+        }

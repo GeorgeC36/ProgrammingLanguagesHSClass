@@ -471,7 +471,6 @@ public class Parser {
         Lexeme glue1 = new Lexeme(GLUE, currentLexeme.getLineNumber());
         constantInitializer.setLeft(glue1);
         glue1.setLeft(consume(CONST));
-        ;
         glue1.setRight(consume(IDENTIFIER));
 
         Lexeme glue2 = new Lexeme(GLUE, currentLexeme.getLineNumber());

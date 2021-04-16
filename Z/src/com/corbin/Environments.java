@@ -39,7 +39,7 @@ public class Environments {
         if (parent != null) {
             parent.update(target, newValue);
         } else {
-            Z.error(target, "Variable " + target + "is undefined and therefore cannot be updated.");
+            Z.error(target, "Variable " + target + " is undefined and therefore cannot be updated.");
         }
     }
 
@@ -49,7 +49,7 @@ public class Environments {
             return value;
         }
 
-        Z.error(target, "Variable " + target + "is undefined.");
+        Z.error(target, "Variable " + target + " is undefined.");
         return null;
     }
 
@@ -71,7 +71,7 @@ public class Environments {
     // -------------- toString --------------
 
     public void print() {
-        System.out.println("Environment id is " + hashCode() + "\nParent id is " + (parent == null ? "none" : parent.hashCode()));
+        System.out.println("Environment id is " + hashCode() + "\nParent id is " + (parent == null ? " none " : parent.hashCode()));
         for (int i = 0; i < identifiers.size(); i++) {
             System.out.print(identifiers.get(i).getStringValue() + "\t");
             Lexeme val = values.get(i);

@@ -70,5 +70,23 @@ public class Environments {
 
     // -------------- toString --------------
 
-
+    public void print() {
+        System.out.println("Environment id is " + hashCode() + "\nParent id is " + (parent == null ? "none" : parent.hashCode()));
+        for (int i = 0; i < identifiers.size(); i++) {
+            System.out.print(identifiers.get(i).getStringValue() + "\t");
+            Lexeme val = values.get(i);
+            switch (val.getType()) {
+                case INT:
+                    System.out.println(val.getIntValue());
+                    break;
+                case FLOAT:
+                    System.out.println(val.getFloatValue());
+                    break;
+                case STRING:
+                    System.out.println(val.getStringValue());
+                    break;
+            }
+        }
+    }
 }
+

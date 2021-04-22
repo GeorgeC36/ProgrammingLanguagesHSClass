@@ -39,6 +39,12 @@ public class Z {
         Parser parser = new Parser(lexemes);
         Lexeme program = parser.program();
         Parser.printTree(program);
+
+        Environments globalEnvironment = new Environments(null);
+        Evaluator evaluator = new Evaluator();
+        Lexeme programResult = evaluator.eval(program, globalEnvironment);
+
+        System.out.println("Program result: " + programResult);
     }
 
     private static void printLexemes(ArrayList<Lexeme> lexemes) {

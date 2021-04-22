@@ -15,7 +15,7 @@ public class Evaluator {
             case STATEMENT_LIST:
                 return evalStatementList(tree, environment);
 
-            // Self-Evaluatiing Types
+            // Self-Evaluating Types
             case INT:
             case FLOAT:
             case STRING:
@@ -55,6 +55,26 @@ public class Evaluator {
             default:
                 Z.error(tree, "Unrecognized error " + tree.toSimpleString());
                 return null;
+        }
+    }
+
+    private Lexeme evalPlus(Lexeme tree, Environments environment) {
+        if (debug) System.out.println("Evaluating Plus...");
+        Lexeme left = eval(tree.getLeft(), environment);
+        Lexeme right = eval(tree.getRight(), environment);
+        TokenType lType = left.getType();
+        TokenType rType = right.getType();
+
+        if (lType == TokenType.INT) {
+            switch (rType) {
+                case INT:
+                    return new Lexeme(TokenType.INT, left.getIntValue() + right.getIntValue(), left.getLineNumber());
+                case FLOAT:
+                case STRING:
+                default:
+                    Z.error();
+                    return null;
+            }
         }
     }
 

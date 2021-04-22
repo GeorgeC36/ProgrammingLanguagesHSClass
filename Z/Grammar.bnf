@@ -12,24 +12,26 @@ statement ::= functionCall
         | loop
         | conditional
 
-expression ::= primary
-		| unary
-		| binary
+//expression ::= primary
+//		| unary
+//		| binary
 
 expressionList ::= expression
                 | expression "," expressionList
 
-primary ::= IDENTIFIER | literal | grouping | functionCall | arrayReference | tupleElementReference
+expression ::= orTerm (("||" | "or") expression)*
+orTerm ::= equalityTerm (("&&" | "and") orTerm)*
+equalityTerm ::= relationalTerm (("==" | "equals" | "!=" | "notequal") equalityTerm)*
+relationalTerm ::= powerTerm ((">" | "greaterthan" | ">=" | "greaterthanequal" | "<" | "lessthan" | "<=" | "lessthanequal") relationalTerm)*
+powerTerm ::= term ("^" powerTerm)*
+term ::= factor (("+" | "-") term)*
+factor ::= unaryTerm (("*" | "/" | "%") factor)*
+unaryTerm ::= ("++" | "--" ) IDENTIFIER
+              | IDENTIFIER ("++" | "--" )
+              | simpleTerm (("+" | "-") | unaryTerm)*
+simpleTerm ::= IDENTIFIER | literal | "(" expression ")"
 
-tupleElementReference ::= tupleExpression "." NUMBER
-                        | tupleExpression "." IDENTIFIER
-
-tupleExpression ::= "(" tupleList ")"
-
-tupleList ::= tupleValue
-            | tupleValue "," tupleList
-
-tupleValue ::= [ IDENTIFIER ":" ] expression
+booleanLiteral ::= "true" | "false"
 
 arrayReference ::= IDENTIFIER "[" expression "]"
 
@@ -39,25 +41,10 @@ arrayType ::= "[" dataType "]"
 
 literal ::= NUMBER | booleanLiteral | STRING
 
-booleanLiteral ::= "true" | "false"
-
-unary ::= prefixUnaryOperators expression
-        | incrementExpression
-
 incrementExpression ::= IDENTIFIER incrementOperators
                         | incrementOperators IDENTIFIER
 
-prefixUnaryOperators ::= "+" | "-" | "not" | "!"
-
 incrementOperators ::= "++" | "--"
-
-binary ::= expression binaryOperator expression
-
-binaryOperator ::= comparator | mathematicalOperator
-
-comparator ::= ">" | "greaterthan" | ">=" | "greaterthanequal" | "<" | "lessthan" | "<=" | "lessthanequal" | "!=" | "notequal" | "==" | "equals"
-
-mathematicalOperator ::= "+" | "-" | "*" | "/" | "^" | "%"
 
 functionDefinition ::= "func" IDENTIFIER "(" functionParameterList? ")" ["->" functionReturnType] "{" statementList "}"
 
@@ -70,8 +57,6 @@ functionReturnType ::= dataType | "Void"
 functionCall ::= IDENTIFIER "(" argumentList? ")"
 
 argumentList ::= [IDENTIFIER ":"] expression [ "," argumentList ]
-
-grouping ::= "(" expression ")"
 
 initialization ::= variableInitializer | constantInitializer
 
@@ -92,19 +77,9 @@ assignmentOperator ::= "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "^="
 
 loop ::= forLoop | forIn | whileLoop
 
-forLoop ::= "for" "(" assignment? ";" booleanExpression? ";" loopIncrement? ")" "{" statementList "}"
+forLoop ::= "for" "(" assignment? ";" expression? ";" loopIncrement? ")" "{" statementList "}"
 
 loopIncrement ::= assignment | incrementExpression
-
-booleanExpression ::= unaryBoolean | simpleBoolean | binaryBoolean
-
-unaryBoolean ::= IDENTIFIER | booleanLiteral | "not" booleanExpression | "!" booleanExpression | "(" booleanExpression ")"
-
-simpleBoolean ::= expression comparator expression
-
-binaryBoolean ::= booleanExpression conjunction booleanExpression
-
-conjunction ::= "&&" | "and" | "||" | "or"
 
 forIn ::= "for" IDENTIFIER "in" iterable "{" statementList "}"
 
@@ -112,14 +87,14 @@ iterable ::= range | IDENTIFIER
 
 range ::= expression "..." expression
 
-whileLoop ::= "while" "(" booleanExpression ")" "{" statementList "}"
+whileLoop ::= "while" "(" expression ")" "{" statementList "}"
 
 conditional ::= ifElseStatements | switchCaseStatements
 
 ifElseStatements ::= ifStatement elseifStatement* elseStatement?
 
-ifStatement ::= "if" "(" booleanExpression ")" "{" statementList "}"
-            | "if" booleanExpression "{" statementList "}"
+ifStatement ::= "if" "(" expression ")" "{" statementList "}"
+            | "if" expression "{" statementList "}"
 
 elseStatement ::= "else" "{" statementList "}"
 

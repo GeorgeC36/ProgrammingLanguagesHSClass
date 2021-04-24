@@ -81,6 +81,8 @@ public class Parser {
         else if (assignmentPending()) return assignment();
         else if (functionDefinitionPending()) return functionDefinition();
         else if (loopPending()) return loop();
+        else if (inputStatementPending()) return inputStatement();
+        else if (outputStatementPending()) return outputStatement();
         else return conditional();
     }
 
@@ -337,6 +339,20 @@ public class Parser {
     private Lexeme loopIncrement() {
         if (assignmentPending()) return assignment();
         else return incrementExpression();
+    }
+    
+    private Lexeme inputStatement() {
+	Lexeme inputStatement = new Lexeme(INPUT_STATEMENT, currentLexeme.getLineNumber());
+	inputStatement.setLeft(consume(INPUT));
+	inputStatement.setRight(variable());
+	return inputStatement;
+    }
+    
+    private Lexeme outputStatement() {
+	Lexeme outputStatement = new Lexeme(OUTPUT_STATEMENT, currentLexeme.getLineNumber());
+	outputStatement.setLeft(consume(OUTPUT));
+	outputStatement.setRight(expression());
+	return outputStatement;
     }
 
     private Lexeme booleanExpression() {
@@ -662,6 +678,16 @@ public class Parser {
         else if (arrayReferencePending()) return arrayReference();
         else return consume(IDENTIFIER);
     }
+    
+    private Lexeme variable() {
+	Lexeme variable = new Lexeme(VARIABLE, currentLexeme.getLineNumber());
+	if (arrayReferencePending()) {
+	    variable.setLeft(arrayReference());
+	} else {
+	    variable.setLeft(consume(IDENTIFIER));
+	}
+	return variable;
+    }
 
     private Lexeme arrayReference() {
         Lexeme arrayReference = new Lexeme(ARRAY_REFERENCE, currentLexeme.getLineNumber());
@@ -799,6 +825,14 @@ public class Parser {
         return forLoopPending()
                 || forInPending()
                 || whileLoopPending();
+    }
+
+    private boolean inputStatementPending() {
+        return check(INPUT);
+    }
+
+    private boolean outputStatementPending() {
+        return check(OUTPUT);
     }
 
     private boolean whileLoopPending() {

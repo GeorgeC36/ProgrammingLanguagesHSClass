@@ -207,7 +207,7 @@ public class Parser {
             parens = true;
         }
         glue1.setRight(glue2);
-        glue2.setLeft(booleanExpression());
+        glue2.setLeft(expression());
         if (parens) {
             glue2.setRight(consume(CLOSEPAREN));
         }
@@ -243,7 +243,7 @@ public class Parser {
 
         glue1.setLeft(consume(OPENPAREN));
         glue1.setRight(glue2);
-        glue2.setLeft(booleanExpression());
+        glue2.setLeft(expression());
         glue2.setRight(consume(CLOSEPAREN));
 
         Lexeme glue3 = new Lexeme(GLUE, currentLexeme.getLineNumber());
@@ -313,7 +313,7 @@ public class Parser {
         forLoop.setRight(semi1);
 
         Lexeme booleanExpression = null;
-        if (booleanExpressionPending()) booleanExpression = booleanExpression();
+        if (booleanExpressionPending()) booleanExpression = expression();
         Lexeme semi2 = consume(SEMICOLON);
         semi2.setLeft(booleanExpression);
         semi1.setRight(semi2);
@@ -353,52 +353,6 @@ public class Parser {
 	outputStatement.setLeft(consume(OUTPUT));
 	outputStatement.setRight(expression());
 	return outputStatement;
-    }
-
-    private Lexeme booleanExpression() {
-        if (simpleBooleanPending()) return simpleBoolean();
-        else if (binaryBooleanPending()) return binaryBoolean();
-        else return unaryBoolean();
-    }
-
-    private Lexeme binaryBoolean() {
-        Lexeme leftBooleanExpression = booleanExpression();
-        Lexeme conjunction = conjunction();
-        conjunction.setLeft(leftBooleanExpression);
-        conjunction.setRight(booleanExpression());
-
-        return conjunction;
-    }
-
-    private Lexeme conjunction() {
-        if (check(AND)) return consume(AND);
-        else return consume(OR);
-    }
-
-    private Lexeme simpleBoolean() {
-        Lexeme leftExpression = expression();
-        Lexeme comparator = comparator();
-        comparator.setLeft(leftExpression);
-        comparator.setRight(expression());
-
-        return comparator;
-    }
-
-    private Lexeme unaryBoolean() {
-        Lexeme unaryBoolean = new Lexeme(UNARY_BOOLEAN, currentLexeme.getLineNumber());
-        if (check(IDENTIFIER)) unaryBoolean.setLeft(consume(IDENTIFIER));
-        else if (booleanLiteralPending()) unaryBoolean.setLeft(booleanLiteral());
-        else if (check(NOT)) {
-            unaryBoolean.setLeft(consume(NOT));
-            unaryBoolean.setRight(booleanExpression());
-        } else {
-            Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
-            unaryBoolean.setLeft(consume(OPENPAREN));
-            unaryBoolean.setRight(glue);
-            glue.setLeft(booleanExpression());
-            glue.setRight(consume(CLOSEPAREN));
-        }
-        return unaryBoolean;
     }
 
     private Lexeme functionDefinition() {
@@ -591,64 +545,164 @@ public class Parser {
 
     private Lexeme expressionList() {
         Lexeme expressionList = new Lexeme(EXPRESSION_LIST, currentLexeme.getLineNumber());
-        Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
-
         expressionList.setLeft(expression());
         if (check(COMMA)) {
+            Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
+            expressionList.setRight(glue);
             glue.setLeft(consume(COMMA));
             glue.setRight(expressionList());
         }
-
         return expressionList;
     }
 
     private Lexeme expression() {
-        if (primaryPending()) return primary();
-        else if (unaryPending()) return unary();
-        else return binary();
+        Lexeme expression = new Lexeme(EXPRESSION, currentLexeme.getLineNumber());
+        expression.setLeft(orTerm());
+        if (check(OR)) {
+            Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
+            expression.setRight(glue);
+            glue.setLeft(consume(OR));
+            glue.setRight(expression());
+        }
+        return expression;
     }
 
-    private Lexeme binary() {
-        Lexeme leftExpression = expression();
-        Lexeme binaryOperator = binaryOperator();
-
-        binaryOperator.setLeft(leftExpression);
-        binaryOperator.setRight(expression());
-        return binaryOperator;
+    private Lexeme orTerm() {
+        Lexeme orTerm = new Lexeme(OR_TERM, currentLexeme.getLineNumber());
+        orTerm.setLeft(equalityTerm());
+        if (check(AND)) {
+            Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
+            orTerm.setRight(glue);
+            glue.setLeft(consume(AND));
+            glue.setRight(orTerm());
+        }
+        return orTerm;
     }
 
-    private Lexeme binaryOperator() {
-        if (comparatorPending()) return comparator();
-        else return mathematicalOperator();
+    private Lexeme equalityTerm() {
+        Lexeme equalityTerm = new Lexeme(EQUALITY_TERM, currentLexeme.getLineNumber());
+        equalityTerm.setLeft(relationalTerm());
+        Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
+        if (check(EQUAL)) {
+            equalityTerm.setRight(glue);
+            glue.setLeft(consume(EQUAL));
+            glue.setRight(equalityTerm());
+        } else if (check(NOTEQUAL)) {
+            equalityTerm.setRight(glue);
+            glue.setLeft(consume(NOTEQUAL));
+            glue.setRight(equalityTerm());
+        }
+        return equalityTerm;
     }
 
-    private Lexeme mathematicalOperator() {
-        if (check(PLUS)) return consume(PLUS);
-        else if (check(MINUS)) return consume(MINUS);
-        else if (check(TIMES)) return consume(TIMES);
-        else if (check(DIVIDE)) return consume(DIVIDE);
-        else if (check(EXP)) return consume(EXP);
-        else return consume(MOD);
+    private Lexeme relationalTerm() {
+        Lexeme relationalTerm = new Lexeme(RELATIONAL_TERM, currentLexeme.getLineNumber());
+        relationalTerm.setLeft(term());
+        Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
+        if (check(GREATER)) {
+            relationalTerm.setRight(glue);
+            glue.setLeft(consume(GREATER));
+            glue.setRight(relationalTerm());
+        } else if (check(GREATEREQUAL)) {
+            relationalTerm.setRight(glue);
+            glue.setLeft(consume(GREATEREQUAL));
+            glue.setRight(relationalTerm());
+        } else if (check(LESS)) {
+            relationalTerm.setRight(glue);
+            glue.setLeft(consume(LESS));
+            glue.setRight(relationalTerm());
+        } else if (check(LESSEQUAL)) {
+            relationalTerm.setRight(glue);
+            glue.setLeft(consume(LESSEQUAL));
+            glue.setRight(relationalTerm());
+        }
+        return relationalTerm;
     }
 
-    private Lexeme comparator() {
-        if (check(GREATER)) return consume(GREATER);
-        else if (check(GREATEREQUAL)) return consume(GREATEREQUAL);
-        else if (check(LESS)) return consume(LESS);
-        else if (check(LESSEQUAL)) return consume(LESSEQUAL);
-        else if (check(NOTEQUAL)) return consume(NOTEQUAL);
-        else return consume(EQUAL);
+    private Lexeme term() {
+        Lexeme term = new Lexeme(TERM, currentLexeme.getLineNumber());
+        term.setLeft(factor());
+        Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
+        if (check(PLUS)) {
+            term.setRight(glue);
+            glue.setLeft(consume(PLUS));
+            glue.setRight(term());
+        } else if (check(MINUS)) {
+            term.setRight(glue);
+            glue.setLeft(consume(MINUS));
+            glue.setRight(term());
+        }
+        return term;
     }
 
-    private Lexeme unary() {
-        if (prefixUnaryOperatorsPending()) {
-            Lexeme unary = new Lexeme(UNARY, currentLexeme.getLineNumber());
-            unary.setLeft(prefixUnaryOperators());
-            unary.setRight(expression());
+    private Lexeme factor() {
+        Lexeme factor = new Lexeme(FACTOR, currentLexeme.getLineNumber());
+        factor.setLeft(powerTerm());
+        Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
+        if (check(TIMES)) {
+            factor.setRight(glue);
+            glue.setLeft(consume(TIMES));
+            glue.setRight(factor());
+        } else if (check(DIVIDE)) {
+            factor.setRight(glue);
+            glue.setLeft(consume(DIVIDE));
+            glue.setRight(factor());
+        } else if (check(MOD)) {
+            factor.setRight(glue);
+            glue.setLeft(consume(MOD));
+            glue.setRight(factor());
+        }
+        return factor;
+    }
 
-            return unary;
+    private Lexeme powerTerm() {
+        Lexeme powerTerm = new Lexeme(POWER_TERM, currentLexeme.getLineNumber());
+        powerTerm.setLeft(unaryTerm());
+        if (check(EXP)) {
+            Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
+            powerTerm.setRight(glue);
+            glue.setLeft(consume(EXP));
+            glue.setRight(powerTerm());
+        }
+        return powerTerm;
+    }
 
-        } else return incrementExpression();
+    private Lexeme unaryTerm() {
+        Lexeme unaryTerm = new Lexeme(UNARY_TERM, currentLexeme.getLineNumber());
+        if (check(INCREMENT)) {
+            unaryTerm.setLeft(consume(INCREMENT));
+            unaryTerm.setRight(variable());
+        } else if (check(DECREMENT)) {
+            unaryTerm.setLeft(consume(DECREMENT));
+            unaryTerm.setRight(variable());
+        } else if (check(PLUS)) {
+            unaryTerm.setLeft(consume(PLUS));
+            unaryTerm.setRight(variable());
+        } else if (check(MINUS)) {
+            unaryTerm.setLeft(consume(MINUS));
+            unaryTerm.setRight(variable());
+        } else if (check(NOT)) {
+            unaryTerm.setLeft(consume(NOT));
+            unaryTerm.setRight(simpleTerm());
+        } else {
+            unaryTerm.setLeft(simpleTerm());
+            if (check(INCREMENT)) {
+        	unaryTerm.setRight(consume(INCREMENT));
+            }
+            else if (check(DECREMENT)) {
+        	unaryTerm.setRight(consume(DECREMENT));
+            }
+        }
+        return unaryTerm;
+    }
+
+    private Lexeme simpleTerm() {
+        Lexeme simpleTerm = new Lexeme(SIMPLE_TERM, currentLexeme.getLineNumber());
+        if (literalPending()) simpleTerm.setLeft(literal());
+        else if (groupingPending()) simpleTerm.setLeft(grouping());
+        else if (functionCallPending()) simpleTerm.setLeft(functionCall());
+        else simpleTerm.setLeft(variable());
+        return simpleTerm;
     }
 
     private Lexeme incrementExpression() {
@@ -665,20 +719,6 @@ public class Parser {
         return incrementExpression;
     }
 
-    private Lexeme prefixUnaryOperators() {
-        if (check(PLUS)) return consume(PLUS);
-        else if (check(MINUS)) return consume(MINUS);
-        else return consume(NOT);
-    }
-
-    private Lexeme primary() {
-        if (literalPending()) return literal();
-        else if (groupingPending()) return grouping();
-        else if (functionCallPending()) return functionCall();
-        else if (arrayReferencePending()) return arrayReference();
-        else return consume(IDENTIFIER);
-    }
-    
     private Lexeme variable() {
 	Lexeme variable = new Lexeme(VARIABLE, currentLexeme.getLineNumber());
 	if (arrayReferencePending()) {
@@ -769,9 +809,6 @@ public class Parser {
     }
 
     // ---------- Pending Methods ----------
-    private boolean programPending() {
-        return check(EOF) || statementListPending();
-    }
 
     private boolean statementListPending() {
         return statementPending();
@@ -843,10 +880,6 @@ public class Parser {
         return check(FOR) && checkNext(IDENTIFIER);
     }
 
-    private boolean iterablePending() {
-        return rangePending() || check(IDENTIFIER);
-    }
-
     private boolean rangePending() {
         return checkNext(ELLIPSIS) && primaryPending();
     }
@@ -867,10 +900,6 @@ public class Parser {
 
     private boolean binaryBooleanPending() {
         return (checkNext(AND) || checkNext(OR)) && booleanExpressionPending();
-    }
-
-    private boolean conjunctionPending() {
-        return check(AND) || check(OR);
     }
 
     private boolean simpleBooleanPending() {
@@ -895,11 +924,6 @@ public class Parser {
         return check(FUNC);
     }
 
-    private boolean functionReturnTypePending() {
-        return dataTypePending()
-                || check(VOID);
-    }
-
     private boolean functionParameterListPending() {
         return functionParameterPending();
     }
@@ -921,17 +945,6 @@ public class Parser {
                         || checkNext(EXPASSIGN)));
     }
 
-
-    private boolean assignmentOperatorPending() {
-        return check(ASSIGN)
-                || check(PLUSASSIGN)
-                || check(MINUSASSIGN)
-                || check(TIMESASSIGN)
-                || check(DIVIDEASSIGN)
-                || check(MODASSIGN)
-                || check(EXPASSIGN);
-    }
-
     private boolean expressionListPending() {
         return expressionPending();
     }
@@ -946,14 +959,6 @@ public class Parser {
 
     private boolean variableInitializerPending() {
         return check(VAR);
-    }
-
-    private boolean initializerExpressionPending() {
-        return expressionPending() || arrayInitializerPending();
-    }
-
-    private boolean arrayInitializerPending() {
-        return check(OPENBRACKET);
     }
 
     private boolean dataTypePending() {
@@ -975,28 +980,6 @@ public class Parser {
                 || checkNext(GREATER) || checkNext(GREATEREQUAL) || checkNext(LESS) || checkNext(LESSEQUAL)
                 || checkNext(NOTEQUAL) || checkNext(EQUAL))
                 && expressionPending();
-    }
-
-    private boolean binaryOperatorPending() {
-        return comparatorPending() || mathematicalOperatorPending();
-    }
-
-    private boolean mathematicalOperatorPending() {
-        return check(PLUS)
-                || check(MINUS)
-                || check(TIMES)
-                || check(DIVIDE)
-                || check(EXP)
-                || check(MOD);
-    }
-
-    private boolean comparatorPending() {
-        return check(GREATER)
-                || check(GREATEREQUAL)
-                || check(LESS)
-                || check(LESSEQUAL)
-                || check(NOTEQUAL)
-                || check(EQUAL);
     }
 
     private boolean unaryPending() {

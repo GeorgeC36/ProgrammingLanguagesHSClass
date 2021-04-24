@@ -51,7 +51,9 @@ public class Lexer {
         keywords.put("for", TokenType.FOR);
         keywords.put("in", TokenType.IN);
         keywords.put("while", TokenType.WHILE);
-
+        
+        keywords.put("input", TokenType.INPUT);
+        keywords.put("output", TokenType.OUTPUT);
     }
 
     // Lexer

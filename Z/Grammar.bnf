@@ -11,6 +11,8 @@ statement ::= functionCall
         | functionDefinition
         | loop
         | conditional
+        | inputStatement
+        | outputStatement
 
 //expression ::= primary
 //		| unary
@@ -109,3 +111,7 @@ switchStatement ::= "switch" "(" expression ")"
 
 caseStatement ::= "case" expression ":" statementList
                 | "default" ":" statementList
+
+inputStatement ::= "input" variable
+
+outputStatement ::= "output" expression

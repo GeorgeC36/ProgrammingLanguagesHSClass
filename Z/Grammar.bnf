@@ -26,10 +26,12 @@ relationalTerm ::= powerTerm ((">" | "greaterthan" | ">=" | "greaterthanequal" |
 powerTerm ::= term ("^" powerTerm)*
 term ::= factor (("+" | "-") term)*
 factor ::= unaryTerm (("*" | "/" | "%") factor)*
-unaryTerm ::= ("++" | "--" ) IDENTIFIER
-              | IDENTIFIER ("++" | "--" )
+unaryTerm ::= ("++" | "--" ) variable
+              | variable ("++" | "--" )
+              | ("!" | "not") expression
               | simpleTerm (("+" | "-") | unaryTerm)*
-simpleTerm ::= IDENTIFIER | literal | "(" expression ")"
+simpleTerm ::= literal | variable |functionCall | "(" expression ")"
+variable ::= IDENTIFER | arrayReference
 
 booleanLiteral ::= "true" | "false"
 

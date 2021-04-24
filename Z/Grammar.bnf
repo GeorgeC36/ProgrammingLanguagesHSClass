@@ -24,10 +24,10 @@ expressionList ::= expression
 expression ::= orTerm (("||" | "or") expression)*
 orTerm ::= equalityTerm (("&&" | "and") orTerm)*
 equalityTerm ::= relationalTerm (("==" | "equals" | "!=" | "notequal") equalityTerm)*
-relationalTerm ::= powerTerm ((">" | "greaterthan" | ">=" | "greaterthanequal" | "<" | "lessthan" | "<=" | "lessthanequal") relationalTerm)*
-powerTerm ::= term ("^" powerTerm)*
+relationalTerm ::= term ((">" | "greaterthan" | ">=" | "greaterthanequal" | "<" | "lessthan" | "<=" | "lessthanequal") relationalTerm)*
 term ::= factor (("+" | "-") term)*
-factor ::= unaryTerm (("*" | "/" | "%") factor)*
+factor ::= powerTerm (("*" | "/" | "%") factor)*
+powerTerm ::= unaryTerm ("^" powerTerm)*
 unaryTerm ::= ("++" | "--" ) variable
               | variable ("++" | "--" )
               | ("!" | "not") expression

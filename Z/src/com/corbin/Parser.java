@@ -822,6 +822,8 @@ public class Parser {
                 || assignmentPending()
                 || functionDefinitionPending()
                 || loopPending()
+                || inputStatementPending()
+                || outputStatementPending()
                 || conditionalPending();
     }
 

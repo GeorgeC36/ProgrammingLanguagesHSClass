@@ -1,6 +1,7 @@
 package com.corbin;
 
 public class Lexeme {
+    public enum Datatype {FLOAT, INT, STRING};
     private final TokenType type;
     private final int lineNumber;
 
@@ -10,6 +11,7 @@ public class Lexeme {
     private Lexeme left;
     private Lexeme right;
     private boolean isConstant;
+    private final Datatype datatype;
 
 
     // Constructor for specials characters, keywords, operators, etc.
@@ -19,6 +21,7 @@ public class Lexeme {
         this.stringValue = null;
         this.intValue = null;
         this.floatValue = null;
+        this.datatype = null;
     }
 
     // Constructor for Identifiers
@@ -28,6 +31,7 @@ public class Lexeme {
         this.stringValue = stringValue;
         this.intValue = null;
         this.floatValue = null;
+        this.datatype = Datatype.STRING;
     }
 
     // Constructor for Integers
@@ -37,6 +41,7 @@ public class Lexeme {
         this.intValue = intValue;
         this.stringValue = null;
         this.floatValue = null;
+        this.datatype = Datatype.INT;
     }
 
     // Constructor for Floats
@@ -46,6 +51,7 @@ public class Lexeme {
         this.floatValue = floatValue;
         this.stringValue = null;
         this.intValue = null;
+        this.datatype = Datatype.FLOAT;
     }
 
     public boolean equals(Lexeme other) {
@@ -64,15 +70,56 @@ public class Lexeme {
     }
 
     public String getStringValue() {
-        return stringValue;
+	switch (datatype) {
+	case FLOAT:
+	    return String.valueOf(floatValue);
+	case INT:
+	    return String.valueOf(intValue);
+	case STRING:
+	    return stringValue;
+	}
+	return "";		// should never happen
     }
 
     public Integer getIntValue() {
-        return intValue;
+	switch (datatype) {
+	case FLOAT:
+	    return floatValue.intValue();
+	case INT:
+	    return intValue;
+	case STRING:
+	    Z.error(lineNumber, "Type conversion error. Can't convert STRING to INT");
+	    return 0;
+	}
+	return 0;		// should never happen
     }
 
     public Float getFloatValue() {
-        return floatValue;
+	switch (datatype) {
+	case FLOAT:
+	    return floatValue;
+	case INT:
+	    return (float) intValue;
+	case STRING:
+	    Z.error(lineNumber, "Type conversion error. Can't convert STRING to FLOAT");
+	    return (float) 0.0;
+	}
+	return (float) 0.0;		// should never happen
+    }
+
+    public boolean getBooleanValue() {
+	if (type == TokenType.TRUE) return true;
+	if (datatype != null) {
+	    switch (datatype) {
+	    case FLOAT:
+		return floatValue != 0;
+	    case INT:
+		return intValue != 0;
+	    case STRING:
+		return !stringValue.isEmpty();
+	    }
+	}
+	return false;
     }
 
     public String toString() {
@@ -108,5 +155,9 @@ public class Lexeme {
 
     public void setIsConstant(boolean isConstant) {
         this.isConstant = isConstant;
+    }
+
+    public Datatype getDatatype() {
+        return datatype;
     }
 }

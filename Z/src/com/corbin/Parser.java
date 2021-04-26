@@ -420,12 +420,14 @@ public class Parser {
     }
 
     private Lexeme assignment() {
+	Lexeme assignment = new Lexeme(ASSIGNMENT, currentLexeme.getLineNumber());
         Lexeme leftSide = arrayReferencePending() ? arrayReference() : consume(IDENTIFIER);
         Lexeme assignmentOperator = assignmentOperator();
         assignmentOperator.setLeft(leftSide);
         assignmentOperator.setRight(expression());
+        assignment.setLeft(assignmentOperator);
 
-        return assignmentOperator;
+        return assignment;
     }
 
     private Lexeme assignmentOperator() {
@@ -439,8 +441,10 @@ public class Parser {
     }
 
     private Lexeme initialization() {
-        if (variableInitializerPending()) return variableInitializer();
-        else return constantInitializer();
+	Lexeme initialization = new Lexeme(TokenType.INITIALIZATION, currentLexeme.getLineNumber());
+        if (variableInitializerPending()) initialization.setLeft(variableInitializer());
+        else initialization.setLeft(constantInitializer());
+        return initialization;
     }
 
     private Lexeme constantInitializer() {
@@ -677,10 +681,10 @@ public class Parser {
             unaryTerm.setRight(variable());
         } else if (check(PLUS)) {
             unaryTerm.setLeft(consume(PLUS));
-            unaryTerm.setRight(variable());
+            unaryTerm.setRight(simpleTerm());
         } else if (check(MINUS)) {
             unaryTerm.setLeft(consume(MINUS));
-            unaryTerm.setRight(variable());
+            unaryTerm.setRight(simpleTerm());
         } else if (check(NOT)) {
             unaryTerm.setLeft(consume(NOT));
             unaryTerm.setRight(simpleTerm());
@@ -797,10 +801,12 @@ public class Parser {
     }
 
     private Lexeme literal() {
-        if (check(INT)) return consume(INT);
-        else if (check(FLOAT)) return consume(FLOAT);
-        else if (booleanLiteralPending()) return booleanLiteral();
-        else return consume(STRING);
+	Lexeme literal = new Lexeme(TokenType.LITERAL, currentLexeme.getLineNumber());
+        if (check(INT)) literal.setLeft(consume(INT));
+        else if (check(FLOAT)) literal.setLeft(consume(FLOAT));
+        else if (booleanLiteralPending()) literal.setLeft(booleanLiteral());
+        else literal.setLeft(consume(STRING));
+        return literal;
     }
 
     private Lexeme booleanLiteral() {

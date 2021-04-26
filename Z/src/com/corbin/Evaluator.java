@@ -12,13 +12,7 @@ public class Evaluator {
 
 	switch (tree.getType()) {
 	case PROGRAM:
-	    return eval(tree.getLeft(), environment);
-
-	case STATEMENT_LIST:
-	    return evalStatementList(tree, environment);
-
-	case STATEMENT:
-	    return evalStatement(tree, environment);
+	    return evalStatementList(tree.getLeft(), environment);
 
 	// Self-Evaluating Types
 	case INT:
@@ -48,7 +42,9 @@ public class Evaluator {
 	case GREATEREQUAL:
 	case LESSEQUAL:
 	    return evalBinaryOperator(tree, environment);
+	default:
 	}
+	return null;
     }
 
     private Lexeme evalBinaryOperator(Lexeme tree, Environments environment) {
@@ -79,27 +75,27 @@ public class Evaluator {
 	    case FLOAT:
 	    case STRING:
 	    default:
-		Z.error();
+//		Z.error();
 		return null;
 	    }
 	}
+	return null;
     }
 
     private Lexeme evalStatementList(Lexeme statementList, Environments environment) {
-	if (debug)
-	    System.out.println("Evaluating StatementList...");
+	if (debug) System.out.println("Evaluating StatementList...");
 	Lexeme result = null;
 	while (statementList != null) {
-	    result = eval(statementList.getLeft(), environment);
+	    if (statementList.getLeft() != null) {
+		result = evalStatement(statementList.getLeft(), environment);
+	    }
 	    statementList = statementList.getRight();
 	}
 	return result;
     }
 
-    private Lexeme evalStatement(Lexeme tree, Environments environment) {
-	if (debug)
-	    System.out.println("Evaluating Statement...");
-	final Lexeme statement = tree.getLeft();
+    private Lexeme evalStatement(Lexeme statement, Environments environment) {
+	if (debug) System.out.println("Evaluating Statement..." + statement.getType());
 	switch (statement.getType()) {
 	case ASSIGNMENT:
 	    return evalAssignment(statement, environment);
@@ -124,33 +120,28 @@ public class Evaluator {
 	return null;
     }
 
-    private Lexeme evalAssignment(Lexeme statement, Environments environment) {
-	Lexeme assignment = statement.getLeft();
-	Lexeme target = environment.lookUp(assignment.getLeft());
-	Lexeme value = evalExpression(assignment.getRight());
+    private Lexeme evalAssignment(Lexeme assignment, Environments environment) {
+	Lexeme assignmentOperator = assignment.getLeft();
+	Lexeme variable = assignmentOperator.getLeft();
+	Lexeme value = evalExpression(assignmentOperator.getRight(), environment);
 	Lexeme result = null;
-	if (target == null || value == null)
+	if (variable == null || value == null)
 	    return null; // error message already printed
 
-	final Datatype targetType = target.getDatatype();
+	final Datatype variableType = variable.getDatatype();
 	// type conversion and error messages handled in get...Value() methods
-	if (targetType == Datatype.FLOAT) {
-	    result = new Lexeme(TokenType.FLOAT, value.getFloatValue(), target.getLineNumber());
-	} else if (targetType == Datatype.INT) {
-	    result = new Lexeme(TokenType.INT, value.getIntValue(), target.getLineNumber());
-	} else if (targetType == Datatype.STRING) {
-	    result = new Lexeme(TokenType.STRING, value.getStringValue(), target.getLineNumber());
+	if (variableType == Datatype.FLOAT) {
+	    result = new Lexeme(TokenType.FLOAT, value.getFloatValue(), variable.getLineNumber());
+	} else if (variableType == Datatype.INT) {
+	    result = new Lexeme(TokenType.INT, value.getIntValue(), variable.getLineNumber());
+	} else if (variableType == Datatype.STRING) {
+	    result = new Lexeme(TokenType.STRING, value.getStringValue(), variable.getLineNumber());
 	}
-	environment.update(target, result);
+	environment.update(variable, result);
 	return result;
     }
 
     private Lexeme evalConditional(Lexeme statement, Environments environment) {
-	// TODO Auto-generated method stub
-	return null;
-    }
-
-    private Lexeme evalFunctionCall(Lexeme statement, Environments environment) {
 	// TODO Auto-generated method stub
 	return null;
     }
@@ -165,9 +156,76 @@ public class Evaluator {
 	return null;
     }
 
-    private Lexeme evalInitialization(Lexeme statement, Environments environment) {
-	// TODO Auto-generated method stub
-	return null;
+    private Lexeme evalInitialization(Lexeme initialization, Environments environment) {
+	Lexeme initializer = initialization.getLeft();
+	Lexeme identifier = initializer.getLeft();
+	if (identifier.getType() != TokenType.IDENTIFIER) {
+	    identifier = identifier.getRight();
+	}
+	Lexeme right = initializer.getRight();
+	Lexeme dataType = null;
+	Lexeme result = null;
+	if (initializer.getType() == TokenType.VARIABLE_INITIALIZER) {
+	    if (right.getLeft().getType() == TokenType.DATA_TYPE) {
+		dataType = right.getLeft().getLeft();
+	    }
+	    if (right.getRight() == null) {	// no initialization
+		switch (dataType.getType()) {
+		case KW_FLOAT:
+		    identifier.setDatatype(Datatype.FLOAT);
+		    result = new Lexeme(TokenType.FLOAT, (float) 0.0, initialization.getLineNumber());
+		    break;
+		case KW_INT:
+		    identifier.setDatatype(Datatype.INT);
+		    result = new Lexeme(TokenType.INT, 0, initialization.getLineNumber());
+		    break;
+		case KW_STRING:
+		    identifier.setDatatype(Datatype.STRING);
+		    result = new Lexeme(TokenType.STRING, "", initialization.getLineNumber());
+		    break;
+		//TODO: arrayType
+		}
+	    } else {
+		Lexeme initializerExpression = right.getRight();
+		if (initializerExpression.getType() == TokenType.GLUE) {
+		    initializerExpression = initializerExpression.getRight();
+		}
+		result = evalInitializerExpression(initializerExpression, environment);
+		if (dataType != null) {
+		    switch (dataType.getType()) {
+		    case KW_FLOAT:
+			identifier.setDatatype(Datatype.FLOAT);
+			if (result.getDatatype() == Datatype.STRING) {
+			    Z.error(dataType, "Type mismatch.  Can't initialize FLOAT to STRING value");
+			} else {
+			    result = new Lexeme(TokenType.FLOAT, result.getFloatValue(), initialization.getLineNumber());
+			}
+			break;
+		    case KW_INT:
+			identifier.setDatatype(Datatype.INT);
+			if (result.getDatatype() == Datatype.STRING) {
+			    Z.error(dataType, "Type mismatch.  Can't initialize INT to STRING value");
+			} else {
+			    result = new Lexeme(TokenType.INT, result.getIntValue(), initialization.getLineNumber());
+			}
+			break;
+		    case KW_STRING:
+			identifier.setDatatype(Datatype.STRING);
+			result = new Lexeme(TokenType.STRING, result.getStringValue(), initialization.getLineNumber());
+			break;
+		    //TODO: arrayType
+		    }
+
+		}
+	    }
+	}
+	environment.insert(identifier, result);
+	return result;
+    }
+
+    private Lexeme evalInitializerExpression(Lexeme initializerExpression, Environments environment) {
+	return evalExpression(initializerExpression, environment);
+	//TODO: arrayInitializer
     }
 
     private Lexeme evalInputStatement(Lexeme statement, Environments environment) {
@@ -181,7 +239,7 @@ public class Evaluator {
     }
 
     private Lexeme evalOutputStatement(Lexeme statement, Environments environment) {
-	Lexeme expression = evalExpression(statement.getRight());
+	Lexeme expression = evalExpression(statement.getRight(), environment);
 	switch (expression.getDatatype()) {
 	case FLOAT:
 	    System.out.println(expression.getFloatValue());
@@ -196,29 +254,29 @@ public class Evaluator {
 	return expression;
     }
 
-    private Lexeme evalExpression(Lexeme expression) {
-	Lexeme orTerm = evalOrTerm(expression.getLeft());
+    private Lexeme evalExpression(Lexeme expression, Environments environment) {
+	Lexeme orTerm = evalOrTerm(expression.getLeft(), environment);
 	if (expression.getRight() == null || orTerm.getBooleanValue()) {
 	    return orTerm;
 	} else {
-	    return evalExpression(expression.getRight().getRight());
+	    return evalExpression(expression.getRight().getRight(), environment);
 	}
     }
 
-    private Lexeme evalOrTerm(Lexeme orTerm) {
-	Lexeme equalityTerm = evalEqualityTerm(orTerm.getLeft());
+    private Lexeme evalOrTerm(Lexeme orTerm, Environments environment) {
+	Lexeme equalityTerm = evalEqualityTerm(orTerm.getLeft(), environment);
 	if (orTerm.getRight() == null || !equalityTerm.getBooleanValue()) {
 	    return equalityTerm;
 	} else {
-	    return evalOrTerm(orTerm.getRight().getRight());
+	    return evalOrTerm(orTerm.getRight().getRight(), environment);
 	}
     }
 
-    private Lexeme evalEqualityTerm(Lexeme equalityTerm) {
-	Lexeme relationalTerm = evalRelationalTerm(equalityTerm.getLeft());
+    private Lexeme evalEqualityTerm(Lexeme equalityTerm, Environments environment) {
+	Lexeme relationalTerm = evalRelationalTerm(equalityTerm.getLeft(), environment);
 	if (equalityTerm.getRight() == null) return relationalTerm;	// no operator
 	
-	Lexeme otherTerm = evalRelationalTerm(equalityTerm.getRight().getRight());
+	Lexeme otherTerm = evalRelationalTerm(equalityTerm.getRight().getRight(), environment);
 	TokenType operatorType = equalityTerm.getRight().getLeft().getType();
 	if (relationalTerm.getDatatype() == Datatype.STRING || otherTerm.getDatatype() == Datatype.STRING) {
 	    if (operatorType == TokenType.EQUAL &&  relationalTerm.getStringValue().equals(otherTerm.getStringValue())
@@ -234,11 +292,11 @@ public class Evaluator {
 	return new Lexeme(TokenType.FALSE, relationalTerm.getLineNumber());
     }
 
-    private Lexeme evalRelationalTerm(Lexeme relationalTerm) {
-	Lexeme term = evalTerm(relationalTerm.getLeft());
+    private Lexeme evalRelationalTerm(Lexeme relationalTerm, Environments environment) {
+	Lexeme term = evalTerm(relationalTerm.getLeft(), environment);
 	if (relationalTerm.getRight() == null) return term;	// no operator
 	
-	Lexeme otherTerm = evalRelationalTerm(relationalTerm.getRight().getRight());
+	Lexeme otherTerm = evalRelationalTerm(relationalTerm.getRight().getRight(), environment);
 	TokenType operatorType = relationalTerm.getRight().getLeft().getType();
 	if (relationalTerm.getDatatype() == Datatype.STRING || otherTerm.getDatatype() == Datatype.STRING) {
 	    if (       operatorType == TokenType.GREATER      && relationalTerm.getStringValue().compareTo(otherTerm.getStringValue()) >  0
@@ -258,41 +316,219 @@ public class Evaluator {
 	return new Lexeme(TokenType.FALSE, relationalTerm.getLineNumber());
     }
 
-    private Lexeme evalTerm(Lexeme term) {
-	Lexeme factor = evalFactor(term.getLeft());
+    private Lexeme evalTerm(Lexeme term, Environments environment) {
+	Lexeme factor = evalFactor(term.getLeft(), environment);
 	if (term.getRight() == null) return factor;	// no operator
 	
-	Lexeme otherTerm = evalTerm(term.getRight().getRight());
+	Lexeme otherTerm = evalTerm(term.getRight().getRight(), environment);
 	TokenType operatorType = term.getRight().getLeft().getType();
-	final Datatype termType = term.getDatatype();
+	final Datatype factorType = factor.getDatatype();
 	final Datatype otherTermType = otherTerm.getDatatype();
-	if (termType == null || otherTermType == null) {
+	if (factorType == null || otherTermType == null) {
 	   Z.error(term.getLineNumber(), "Incompatible datatypes"); 
 	   return new Lexeme(TokenType.INT, 0, term.getLineNumber());
 	}
 
-	if (termType == Datatype.STRING || otherTermType == Datatype.STRING) {
+	if (factorType == Datatype.STRING || otherTermType == Datatype.STRING) {
 	    if (operatorType == TokenType.PLUS) {
-		return new Lexeme(TokenType.STRING, term.getStringValue() + otherTerm.getStringValue(), term.getLineNumber());
+		return new Lexeme(TokenType.STRING, factor.getStringValue() + otherTerm.getStringValue(), term.getLineNumber());
 	    } else {		// MINUS
-		return new Lexeme(TokenType.STRING, term.getStringValue().replaceFirst(otherTerm.getStringValue() + "$", ""), term.getLineNumber());
+		return new Lexeme(TokenType.STRING, factor.getStringValue().replaceFirst(otherTerm.getStringValue() + "$", ""), term.getLineNumber());
 	    }
-	} else if (termType == Datatype.FLOAT || otherTermType == Datatype.FLOAT) {
+	} else if (factorType == Datatype.FLOAT || otherTermType == Datatype.FLOAT) {
 	    if (operatorType == TokenType.PLUS) {
-		return new Lexeme(TokenType.FLOAT, term.getFloatValue() + otherTerm.getFloatValue(), term.getLineNumber());
+		return new Lexeme(TokenType.FLOAT, factor.getFloatValue() + otherTerm.getFloatValue(), term.getLineNumber());
 	    } else {		// MINUS
-		return new Lexeme(TokenType.FLOAT, term.getFloatValue() - otherTerm.getFloatValue(), term.getLineNumber());
+		return new Lexeme(TokenType.FLOAT, factor.getFloatValue() - otherTerm.getFloatValue(), term.getLineNumber());
 	    }
-	} else if (termType == Datatype.INT && otherTermType == Datatype.INT) {
-		return new Lexeme(TokenType.FLOAT, term.getIntValue() + otherTerm.getIntValue(), term.getLineNumber());
+	} else if (factorType == Datatype.INT && otherTermType == Datatype.INT) {
+	    if (operatorType == TokenType.PLUS) {
+		return new Lexeme(TokenType.INT, factor.getIntValue() + otherTerm.getIntValue(), term.getLineNumber());
 	    } else {		// MINUS
-		return new Lexeme(TokenType.FLOAT, term.getIntValue() - otherTerm.getIntValue(), term.getLineNumber());
+		return new Lexeme(TokenType.INT, factor.getIntValue() - otherTerm.getIntValue(), term.getLineNumber());
 	    }
+	}
+	Z.error(term.getLeft(), "Incompatible Types. Can't perform " + operatorType + " operation on operands of type " 
+		+ factorType + " and " + otherTermType);
+	return new Lexeme(TokenType.INT, 0, term.getLineNumber());
     }
 
-    private Lexeme evalFactor(Lexeme left) {
-	// TODO Auto-generated method stub
-	return null;
+    private Lexeme evalFactor(Lexeme factor, Environments environment) {
+	Lexeme powerTerm = evalPowerTerm(factor.getLeft(), environment);
+	if (factor.getRight() == null) return powerTerm;	// no operator
+	
+	Lexeme otherTerm = evalTerm(factor.getRight().getRight(), environment);
+	TokenType operatorType = factor.getRight().getLeft().getType();
+	final Datatype factorType = factor.getDatatype();
+	final Datatype otherTermType = otherTerm.getDatatype();
+	if (factorType == null || otherTermType == null) {
+	   Z.error(factor.getLineNumber(), "Incompatible datatypes"); 
+	   return new Lexeme(TokenType.INT, 0, factor.getLineNumber());
+	}
+
+	if (factorType == Datatype.STRING && otherTermType == Datatype.INT && operatorType == TokenType.TIMES) {
+	    String result = "";
+	    for (int i = 0; i < otherTerm.getIntValue(); i++) {
+		result += factor.getStringValue();
+	    }
+	    return new Lexeme(TokenType.STRING, result, factor.getLineNumber());
+	} else if (factorType == Datatype.INT && otherTermType == Datatype.STRING && operatorType == TokenType.TIMES) {
+	    String result = "";
+	    for (int i = 0; i < factor.getIntValue(); i++) {
+		result += otherTerm.getStringValue();
+	    }
+	    return new Lexeme(TokenType.STRING, result, factor.getLineNumber());
+	} else if (factorType == Datatype.FLOAT || otherTermType == Datatype.FLOAT) {
+	    if (operatorType == TokenType.TIMES) {
+		return new Lexeme(TokenType.FLOAT, factor.getFloatValue() * otherTerm.getFloatValue(), factor.getLineNumber());
+	    } else if (operatorType == TokenType.DIVIDE) {
+		return new Lexeme(TokenType.FLOAT, factor.getFloatValue() / otherTerm.getFloatValue(), factor.getLineNumber());
+	    } else {		// MOD
+		return new Lexeme(TokenType.FLOAT, factor.getFloatValue() % otherTerm.getFloatValue(), factor.getLineNumber());
+	    }
+	} else if (factorType == Datatype.INT && otherTermType == Datatype.INT) {
+	    if (operatorType == TokenType.TIMES) {
+		return new Lexeme(TokenType.INT, factor.getIntValue() * otherTerm.getIntValue(), factor.getLineNumber());
+	    } else if (operatorType == TokenType.DIVIDE) {
+		return new Lexeme(TokenType.INT, factor.getIntValue() / otherTerm.getIntValue(), factor.getLineNumber());
+	    } else {		// MOD
+		return new Lexeme(TokenType.INT, factor.getIntValue() % otherTerm.getIntValue(), factor.getLineNumber());
+	    }
+	}
+	Z.error(factor.getLeft(), "Incompatible Types. Can't perform " + operatorType + " operation on operands of type " 
+		+ factorType + " and " + otherTermType);
+	return new Lexeme(TokenType.INT, 0, factor.getLineNumber());
     }
 
+    private Lexeme evalPowerTerm(Lexeme powerTerm, Environments environment) {
+	Lexeme unaryTerm = evalUnaryTerm(powerTerm.getLeft(), environment);
+	if (powerTerm.getRight() == null) return unaryTerm;	// no operator
+	
+	Lexeme otherTerm = evalPowerTerm(powerTerm.getRight().getRight(), environment);
+	TokenType operatorType = powerTerm.getRight().getLeft().getType();
+	final Datatype powerTermType = powerTerm.getDatatype();
+	final Datatype otherTermType = otherTerm.getDatatype();
+	if (powerTermType == null || otherTermType == null
+		|| powerTermType == Datatype.STRING || otherTermType == Datatype.STRING) {
+	   Z.error(powerTerm.getLineNumber(), "Incompatible datatypes"); 
+	   return new Lexeme(TokenType.INT, 0, powerTerm.getLineNumber());
+	}
+	double result = Math.pow(unaryTerm.getFloatValue(), otherTerm.getFloatValue());
+	if (powerTermType == Datatype.INT && otherTermType == Datatype.INT) {
+	    return new Lexeme(TokenType.INT, (int) result, powerTerm.getLineNumber());
+	} else { 	// at least one is a FLOAT
+	    return new Lexeme(TokenType.FLOAT, (float) result, powerTerm.getLineNumber());
+	}
+    }
+
+    private Lexeme evalUnaryTerm(Lexeme unaryTerm, Environments environment) {
+	final Lexeme left = unaryTerm.getLeft();
+	final Lexeme right = unaryTerm.getRight();
+	final TokenType leftType = left.getType();
+	if (leftType == TokenType.PLUS) {
+	    return evalSimpleTerm(right, environment);
+	}
+	Lexeme result = null;
+	if (leftType == TokenType.MINUS) {
+	    Lexeme simpleTerm = evalSimpleTerm(right, environment);
+	    switch (simpleTerm.getType()) {
+	    case INT: 
+		return new Lexeme (TokenType.INT, - simpleTerm.getIntValue(), unaryTerm.getLineNumber());
+	    case FLOAT: 
+		return new Lexeme (TokenType.FLOAT, - simpleTerm.getFloatValue(), unaryTerm.getLineNumber());
+	    case STRING:
+		Z.error(simpleTerm, "Invalid type.  Can't negate STRING");
+		return new Lexeme (TokenType.INT, 0, unaryTerm.getLineNumber());
+	    }
+	} else if (leftType == TokenType.NOT) {
+	    Lexeme simpleTerm = evalSimpleTerm(right, environment);
+	    return new Lexeme (simpleTerm.getBooleanValue() ? TokenType.FALSE : TokenType.TRUE, unaryTerm.getLineNumber());
+	} else if (leftType == TokenType.INCREMENT || leftType == TokenType.DECREMENT) {
+	    Lexeme variable = evalVariable(right, environment);
+	    Lexeme value = environment.lookUp(variable);
+	    switch (value.getType()) {
+	    case INT: 
+		result = new Lexeme (TokenType.INT, value.getIntValue() + (leftType == TokenType.INCREMENT ? 1 : -1), unaryTerm.getLineNumber());
+		break;
+	    case FLOAT: 
+		result = new Lexeme (TokenType.FLOAT, value.getFloatValue() + (leftType == TokenType.INCREMENT ? 1 : -1), unaryTerm.getLineNumber());
+		break;
+	    case STRING:
+		Z.error(variable, "Invalid type.  Can't increment or decrement STRING");
+		result = new Lexeme (TokenType.INT, 0, unaryTerm.getLineNumber());
+	    }
+	    environment.update(variable, result);
+	    return result;	
+	}
+	Lexeme simpleTerm = evalSimpleTerm(left, environment);
+	if (right == null) {
+	    return simpleTerm;		// no operator
+	} else if (right.getType() == TokenType.INCREMENT || right.getType() == TokenType.DECREMENT) {
+	    if (simpleTerm.getType() == TokenType.VARIABLE) {
+		Lexeme value = environment.lookUp(simpleTerm);
+		switch (value.getType()) {
+		case INT:
+		    result = new Lexeme(TokenType.INT, value.getIntValue() + (right.getType() == TokenType.INCREMENT ? 1 : -1), unaryTerm.getLineNumber());
+		    break;
+		case FLOAT:
+		    result = new Lexeme(TokenType.FLOAT, value.getFloatValue() + (right.getType() == TokenType.INCREMENT ? 1 : -1), unaryTerm.getLineNumber());
+		    break;
+		case STRING:
+		    Z.error(simpleTerm, "Invalid type.  Can't increment or decrement STRING");
+		    result = new Lexeme(TokenType.INT, 0, unaryTerm.getLineNumber());
+		}
+		environment.update(simpleTerm, result);
+		return value;				// value before increment or decrement
+	    } else {
+		Z.error(simpleTerm, "Can't INCREMENT or DECREMENT non-variable");
+	    }
+	}
+	Z.error(unaryTerm, "Invalid syntax");
+	return new Lexeme(TokenType.INT, 0, simpleTerm.getLineNumber());
+    }
+
+    private Lexeme evalSimpleTerm(Lexeme simpleTerm, Environments environment) {
+	final Lexeme left = simpleTerm.getLeft();
+	switch (left.getType()) {
+	case FUNCTION_CALL:
+	    return evalFunctionCall(left, environment);
+	case GROUPING:
+	    return evalGrouping(left, environment);
+	case LITERAL:
+	    return evalLiteral(left, environment);
+	case VARIABLE:
+	    return environment.lookUp(evalVariable(left, environment));
+	default:
+	    Z.error(simpleTerm, "Unrecognized value");
+	    return new Lexeme(TokenType.INT, 0, simpleTerm.getLineNumber());
+	}
+    }
+
+    private Lexeme evalFunctionCall(Lexeme functionCall, Environments environment) {
+	Z.error(functionCall, "Function call TBD");
+	return new Lexeme(TokenType.INT, 0, functionCall.getLineNumber());
+    }
+
+    private Lexeme evalGrouping(Lexeme grouping, Environments environment) {
+	return evalExpression(grouping.getRight().getLeft(), environment);
+    }
+
+    private Lexeme evalLiteral(Lexeme literal, Environments environment) {
+	Lexeme left = literal.getLeft();
+	if (left.getType() == TokenType.BOOLEAN_LITERAL) {
+	    return evalBooleanLiteral(left, environment);
+	} else {
+	    return left;	// NUMBER or STRING
+	}
+    }
+
+    private Lexeme evalBooleanLiteral(Lexeme booleanLiteral, Environments environment) {
+	return booleanLiteral.getLeft();
+    }
+
+    private Lexeme evalVariable(Lexeme variable, Environments environment) {
+	return variable.getLeft();
+	//TODO: arraryReference
+    }
+    
 }

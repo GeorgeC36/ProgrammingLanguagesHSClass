@@ -11,7 +11,7 @@ public class Lexeme {
     private Lexeme left;
     private Lexeme right;
     private boolean isConstant;
-    private final Datatype datatype;
+    private Datatype datatype;
 
 
     // Constructor for specials characters, keywords, operators, etc.
@@ -159,5 +159,9 @@ public class Lexeme {
 
     public Datatype getDatatype() {
         return datatype;
+    }
+
+    public void setDatatype(Datatype datatype) {
+        this.datatype = datatype;
     }
 }

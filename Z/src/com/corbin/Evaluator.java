@@ -122,22 +122,23 @@ public class Evaluator {
 
     private Lexeme evalAssignment(Lexeme assignment, Environments environment) {
 	Lexeme assignmentOperator = assignment.getLeft();
-	Lexeme variable = assignmentOperator.getLeft();
+	Lexeme identifier = assignmentOperator.getLeft();
+	Lexeme variable = environment.lookUp(identifier);
 	Lexeme value = evalExpression(assignmentOperator.getRight(), environment);
 	Lexeme result = null;
-	if (variable == null || value == null)
+	if (identifier == null || value == null)
 	    return null; // error message already printed
 
 	final Datatype variableType = variable.getDatatype();
 	// type conversion and error messages handled in get...Value() methods
 	if (variableType == Datatype.FLOAT) {
-	    result = new Lexeme(TokenType.FLOAT, value.getFloatValue(), variable.getLineNumber());
+	    result = new Lexeme(TokenType.FLOAT, value.getFloatValue(), identifier.getLineNumber());
 	} else if (variableType == Datatype.INT) {
-	    result = new Lexeme(TokenType.INT, value.getIntValue(), variable.getLineNumber());
+	    result = new Lexeme(TokenType.INT, value.getIntValue(), identifier.getLineNumber());
 	} else if (variableType == Datatype.STRING) {
-	    result = new Lexeme(TokenType.STRING, value.getStringValue(), variable.getLineNumber());
+	    result = new Lexeme(TokenType.STRING, value.getStringValue(), identifier.getLineNumber());
 	}
-	environment.update(variable, result);
+	environment.update(identifier, result);
 	return result;
     }
 
@@ -151,10 +152,44 @@ public class Evaluator {
 	return null;
     }
 
-    private Lexeme evalIncrementExpression(Lexeme statement, Environments environment) {
-	// TODO Auto-generated method stub
-	return null;
-    }
+    private Lexeme evalIncrementExpression(Lexeme incrementExpression, Environments environment) {
+	Lexeme result = null;
+	if (incrementExpression.getLeft().getType() == TokenType.IDENTIFIER) {  // postincrement
+	    Lexeme variable = incrementExpression.getLeft();
+	    Lexeme value = environment.lookUp(variable);
+	    TokenType operatorType = incrementExpression.getRight().getType();
+	    switch (value.getType()) {
+	    case INT: 
+		result = new Lexeme (TokenType.INT, value.getIntValue() + (operatorType == TokenType.INCREMENT ? 1 : -1), incrementExpression.getLineNumber());
+		break;
+	    case FLOAT: 
+		result = new Lexeme (TokenType.FLOAT, value.getFloatValue() + (operatorType == TokenType.INCREMENT ? 1 : -1), incrementExpression.getLineNumber());
+		break;
+	    case STRING:
+		Z.error(variable, "Invalid type.  Can't increment or decrement STRING");
+		result = value;
+	    }
+	    environment.update(variable, result);
+	    return value;	// original value
+	} else {		// preincrement
+	    Lexeme variable = incrementExpression.getRight();
+	    Lexeme value = environment.lookUp(variable);
+	    TokenType operatorType = incrementExpression.getLeft().getType();
+	    switch (value.getType()) {
+	    case INT: 
+		result = new Lexeme (TokenType.INT, value.getIntValue() + (operatorType == TokenType.INCREMENT ? 1 : -1), incrementExpression.getLineNumber());
+		break;
+	    case FLOAT: 
+		result = new Lexeme (TokenType.FLOAT, value.getFloatValue() + (operatorType == TokenType.INCREMENT ? 1 : -1), incrementExpression.getLineNumber());
+		break;
+	    case STRING:
+		Z.error(variable, "Invalid type.  Can't increment or decrement STRING");
+		result = value;
+	    }
+	    environment.update(variable, result);
+	    return result;	// updated value
+	}
+   }
 
     private Lexeme evalInitialization(Lexeme initialization, Environments environment) {
 	Lexeme initializer = initialization.getLeft();
@@ -191,7 +226,9 @@ public class Evaluator {
 		    initializerExpression = initializerExpression.getRight();
 		}
 		result = evalInitializerExpression(initializerExpression, environment);
-		if (dataType != null) {
+		if (dataType == null) {		// if no explicit datatype, use type of expression
+		    identifier.setDatatype(result.getDatatype());
+		} else {
 		    switch (dataType.getType()) {
 		    case KW_FLOAT:
 			identifier.setDatatype(Datatype.FLOAT);
@@ -234,7 +271,67 @@ public class Evaluator {
     }
 
     private Lexeme evalLoop(Lexeme statement, Environments environment) {
-	// TODO Auto-generated method stub
+	Environments loopEnvironment = new Environments(environment);
+	final Lexeme loop = statement.getLeft();
+	switch (loop.getType()) {
+	case FOR_LOOP:
+	    return evalForLoop(loop, loopEnvironment);
+	case FOR_IN:
+	    return evalForIn(loop, loopEnvironment);
+	case WHILE_LOOP:
+	    return evalWhile(loop, loopEnvironment);
+	}
+	Z.error(loop, "Unknown loop type");
+	return null;
+    }
+
+    private Lexeme evalForLoop(Lexeme forLoop, Environments environment) {
+	if (debug) System.out.println("Evaluating For Loop..." + forLoop.getType());
+	Lexeme semi1 = forLoop.getRight();
+	if (semi1.getLeft() != null) evalInitialization(semi1.getLeft(), environment);
+	Lexeme semi2 = semi1.getRight();
+	Lexeme expression = semi2.getLeft();
+	Lexeme loopIncrement = semi2.getRight().getLeft();
+	Lexeme statementList = semi2.getRight().getRight().getRight().getLeft();
+	while (expression == null || evalExpression(expression, environment).getBooleanValue()) {
+	    evalStatementList(statementList, environment);
+	    if (loopIncrement != null) evalLoopIncrement(loopIncrement, environment);
+	}
+	return null;
+    }
+
+    private void evalLoopIncrement(Lexeme loopIncrement, Environments environment) {
+	if (loopIncrement.getType() == TokenType.ASSIGNMENT) evalAssignment(loopIncrement, environment);
+	else evalIncrementExpression(loopIncrement, environment);
+    }
+
+    private Lexeme evalForIn(Lexeme forInLoop, Environments environment) {
+	Lexeme identifier = forInLoop.getLeft();
+	Lexeme iterable = forInLoop.getRight().getLeft();	// TODO: arrays
+	Lexeme statementList = forInLoop.getRight().getRight().getRight().getLeft();
+	Lexeme start = evalExpression(iterable.getLeft(), environment);	
+	Lexeme end = evalExpression(iterable.getRight(), environment);
+	
+	environment.insert(identifier, start);
+	Lexeme value = start;
+	while (value.getFloatValue() < end.getFloatValue()) {
+	    evalStatementList(statementList, environment);
+	    if (start.getDatatype() == Datatype.INT) {
+		value = new Lexeme(TokenType.INT, value.getIntValue() + 1, forInLoop.getLineNumber());
+	    } else {
+		value = new Lexeme(TokenType.FLOAT, value.getFloatValue() + 1, forInLoop.getLineNumber());
+	    }
+	    environment.update(identifier, value);
+	}
+	return null;
+    }
+
+    private Lexeme evalWhile(Lexeme whileLoop, Environments environment) {
+	if (debug) System.out.println("Evaluating While..." + whileLoop.getType());
+	Lexeme expression = whileLoop.getLeft().getRight().getRight().getLeft();
+	while (evalExpression(expression, environment).getBooleanValue()) {
+	    evalStatementList(whileLoop.getRight().getRight().getLeft(), environment);
+	}
 	return null;
     }
 
@@ -298,18 +395,18 @@ public class Evaluator {
 	
 	Lexeme otherTerm = evalRelationalTerm(relationalTerm.getRight().getRight(), environment);
 	TokenType operatorType = relationalTerm.getRight().getLeft().getType();
-	if (relationalTerm.getDatatype() == Datatype.STRING || otherTerm.getDatatype() == Datatype.STRING) {
-	    if (       operatorType == TokenType.GREATER      && relationalTerm.getStringValue().compareTo(otherTerm.getStringValue()) >  0
-		    || operatorType == TokenType.GREATEREQUAL && relationalTerm.getStringValue().compareTo(otherTerm.getStringValue()) >= 0
-		    || operatorType == TokenType.LESS         && relationalTerm.getStringValue().compareTo(otherTerm.getStringValue()) <  0
-		    || operatorType == TokenType.LESSEQUAL    && relationalTerm.getStringValue().compareTo(otherTerm.getStringValue()) <= 0) {
+	if (term.getDatatype() == Datatype.STRING || otherTerm.getDatatype() == Datatype.STRING) {
+	    if (       operatorType == TokenType.GREATER      && term.getStringValue().compareTo(otherTerm.getStringValue()) >  0
+		    || operatorType == TokenType.GREATEREQUAL && term.getStringValue().compareTo(otherTerm.getStringValue()) >= 0
+		    || operatorType == TokenType.LESS         && term.getStringValue().compareTo(otherTerm.getStringValue()) <  0
+		    || operatorType == TokenType.LESSEQUAL    && term.getStringValue().compareTo(otherTerm.getStringValue()) <= 0) {
 		return new Lexeme(TokenType.TRUE, relationalTerm.getLineNumber());
 	    }
 	} else {	// INTs can be compared as FLOATs
-	    if (       operatorType == TokenType.GREATER      && relationalTerm.getFloatValue() >  otherTerm.getFloatValue()
-		    || operatorType == TokenType.GREATEREQUAL && relationalTerm.getFloatValue() >= otherTerm.getFloatValue()
-		    || operatorType == TokenType.LESS         && relationalTerm.getFloatValue() <  otherTerm.getFloatValue()
-		    || operatorType == TokenType.LESSEQUAL    && relationalTerm.getFloatValue() <= otherTerm.getFloatValue()) {
+	    if (       operatorType == TokenType.GREATER      && term.getFloatValue() >  otherTerm.getFloatValue()
+		    || operatorType == TokenType.GREATEREQUAL && term.getFloatValue() >= otherTerm.getFloatValue()
+		    || operatorType == TokenType.LESS         && term.getFloatValue() <  otherTerm.getFloatValue()
+		    || operatorType == TokenType.LESSEQUAL    && term.getFloatValue() <= otherTerm.getFloatValue()) {
 		return new Lexeme(TokenType.TRUE, relationalTerm.getLineNumber());
 	    }
 	}

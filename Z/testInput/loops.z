@@ -1,12 +1,25 @@
 // Loops
 
-for (i = 0; i < 5; i++) {
-   a=3
-}
-var i = 1
-for i in 1...5 {
-  b=7
-}
-while (i < 6) {
-    i++
-}
+ var i = 0
+ var j = 5
+ var k = 8
+
+ output i + " " + j + " " + k
+
+ for (i = 0; i < 4; i++) {
+   var j = 2 * i
+ 	j = i ^ 2
+        k = i ^ 2
+ output i + " " + j + " " + k
+ }
+
+ output i + " " + j + " " + k
+
+ for i in 1...5 {
+     output "for in " + i
+ }
+
+ while (i < 6) {
+     output "while " + i
+     i = i + 1.6
+ }

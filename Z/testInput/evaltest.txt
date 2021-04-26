@@ -1,0 +1,12 @@
+var a = -5
+a = -a + 3
+output "The value of a is now " + a
+
+// var d = "dogs"
+// output d - "s"
+// output d - "doesn't match, so nothing happens"
+
+// var stringNum = "3.14159"
+// output stringNum - "\.[0-9]*"
+
+// output "String subtraction removes characters at the end of a string" - "at the end of a string"

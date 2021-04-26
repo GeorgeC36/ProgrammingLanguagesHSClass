@@ -225,9 +225,11 @@ public class Parser {
     }
 
     private Lexeme loop() {
-        if (forLoopPending()) return forLoop();
-        else if (forInPending()) return forIn();
-        else return whileLoop();
+        Lexeme loop = new Lexeme(LOOP, currentLexeme.getLineNumber());
+        if (forLoopPending()) loop.setLeft(forLoop());
+        else if (forInPending()) loop.setLeft(forIn());
+        else loop.setLeft(whileLoop());
+        return loop;
     }
 
     private Lexeme whileLoop() {
@@ -308,8 +310,19 @@ public class Parser {
 
         Lexeme assignment = null;
         if (assignmentPending()) assignment = assignment();
+        // make it an initialization
+        Lexeme initialization = new Lexeme(INITIALIZATION, currentLexeme.getLineNumber());
+        Lexeme variableInitializer = new Lexeme(VARIABLE_INITIALIZER, currentLexeme.getLineNumber());
+        initialization.setLeft(variableInitializer);
+        Lexeme viGlue1 = new Lexeme(GLUE, currentLexeme.getLineNumber());
+        viGlue1.setRight(assignment.getLeft().getLeft());
+        variableInitializer.setLeft(viGlue1);
+        Lexeme viGlue2 = new Lexeme(GLUE, currentLexeme.getLineNumber());
+        viGlue2.setLeft(assignment.getLeft());
+        viGlue2.setRight(assignment.getLeft().getRight());
+        variableInitializer.setRight(viGlue2);
         Lexeme semi1 = consume(SEMICOLON);
-        semi1.setLeft(assignment);
+        semi1.setLeft(initialization);
         forLoop.setRight(semi1);
 
         Lexeme booleanExpression = null;

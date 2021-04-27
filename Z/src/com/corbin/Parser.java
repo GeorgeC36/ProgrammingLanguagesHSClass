@@ -171,9 +171,10 @@ public class Parser {
     }
 
     private Lexeme elseStatement() {
+	// only the statement list is needed by Evaluator.  No need to store other tokens.
         consume(ELSE);
         consume(OPENBRACE);
-        Lexeme statementList = statementList();
+        Lexeme statementList = statementList();	
         consume(CLOSEBRACE);
         return statementList;
     }
@@ -184,6 +185,7 @@ public class Parser {
     }
 
     private Lexeme ifStatement() {
+	// only the expression and statement list are needed by Evaluator.  No need to store other tokens.
         Lexeme ifStatement = new Lexeme(IF_STATEMENT, currentLexeme.getLineNumber());
         consume(IF);
         

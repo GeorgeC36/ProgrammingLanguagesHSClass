@@ -55,10 +55,23 @@ public class Lexeme {
     }
 
     public boolean equals(Lexeme other) {
-        return this.type == TokenType.IDENTIFIER &&
-                this.type == other.type &&
+	switch (this.type) {
+	case IDENTIFIER: 
+	case STRING:
+	    return (this.type == other.type &&
                 this.stringValue != null &&
-                this.stringValue.equals(other.stringValue);
+                this.stringValue.equals(other.stringValue));
+	case INT:	    
+	    return (this.type == other.type &&
+                this.intValue != null &&
+                this.intValue.equals(other.intValue));
+	case FLOAT:	    
+	    return (this.type == other.type &&
+                this.floatValue != null &&
+                this.floatValue.equals(other.floatValue));	
+	default:
+		return false;	    
+	}
     }
 
     public TokenType getType() {

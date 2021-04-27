@@ -7,9 +7,9 @@
  output i + " " + j + " " + k
 
  for (i = 0; i < 4; i++) {
-   var j = 2 * i
- 	j = i ^ 2
-        k = i ^ 2
+   var j = 10
+ 	j++
+        k++
  output i + " " + j + " " + k
  }
 

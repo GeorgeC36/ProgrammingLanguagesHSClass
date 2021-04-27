@@ -21,14 +21,18 @@ public class Environments {
     // -------------- Public Environment Methods --------------
 
     public void insert(Lexeme identifier, Lexeme value) {
-        identifiers.add(identifier);
-        values.add(value);
+	if (identifiers.contains(identifier)) {		// need to handle var inside loop
+	    update(identifier, value);
+	} else {
+	    identifiers.add(identifier);
+	    values.add(value);
+	}
     }
 
     public void update(Lexeme target, Lexeme newValue) {
         for (int i = 0; i < identifiers.size(); i++) {
             if (identifiers.get(i).equals(target)) {
-                if (identifiers.get(i).isConstant()) {
+                if (identifiers.get(i).isConstant() && !values.get(i).equals(newValue)) {   // allow const inside loop
                     Z.error(target, "Identifier cannot be modified");
                     return;
                 }

@@ -61,7 +61,7 @@ public class Z {
     }
 
     public static void error(int lineNumber, String message) {
-        System.out.println("Cmon Man You Messed Up: " + message + " on line: " + lineNumber);
+        System.err.println("Cmon Man You Messed Up: " + message + " on line: " + lineNumber);
     }
 
     public static void error(Lexeme lexeme, String message) {

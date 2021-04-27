@@ -318,7 +318,7 @@ public class Parser {
         viGlue1.setRight(assignment.getLeft().getLeft());
         variableInitializer.setLeft(viGlue1);
         Lexeme viGlue2 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        viGlue2.setLeft(assignment.getLeft());
+        viGlue2.setLeft(new Lexeme(assignment.getLeft().getType(), assignment.getLeft().getLineNumber()));
         viGlue2.setRight(assignment.getLeft().getRight());
         variableInitializer.setRight(viGlue2);
         Lexeme semi1 = consume(SEMICOLON);

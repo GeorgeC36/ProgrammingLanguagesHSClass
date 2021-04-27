@@ -262,7 +262,6 @@ public class Evaluator {
 
     private Lexeme evalInitializerExpression(Lexeme initializerExpression, Environments environment) {
 	return evalExpression(initializerExpression, environment);
-	//TODO: arrayInitializer
     }
 
     private Lexeme evalInputStatement(Lexeme statement, Environments environment) {
@@ -422,7 +421,7 @@ public class Evaluator {
 	final Datatype factorType = factor.getDatatype();
 	final Datatype otherTermType = otherTerm.getDatatype();
 	if (factorType == null || otherTermType == null) {
-	   Z.error(term.getLineNumber(), "Incompatible datatypes"); 
+	   Z.error(term, "Incompatible datatypes"); 
 	   return new Lexeme(TokenType.INT, 0, term.getLineNumber());
 	}
 
@@ -454,46 +453,46 @@ public class Evaluator {
 	Lexeme powerTerm = evalPowerTerm(factor.getLeft(), environment);
 	if (factor.getRight() == null) return powerTerm;	// no operator
 	
-	Lexeme otherTerm = evalTerm(factor.getRight().getRight(), environment);
+	Lexeme otherTerm = evalFactor(factor.getRight().getRight(), environment);
 	TokenType operatorType = factor.getRight().getLeft().getType();
-	final Datatype factorType = factor.getDatatype();
+	final Datatype powerTermType = powerTerm.getDatatype();
 	final Datatype otherTermType = otherTerm.getDatatype();
-	if (factorType == null || otherTermType == null) {
-	   Z.error(factor.getLineNumber(), "Incompatible datatypes"); 
+	if (powerTermType == null || otherTermType == null) {
+	   Z.error(factor, "Incompatible datatypes"); 
 	   return new Lexeme(TokenType.INT, 0, factor.getLineNumber());
 	}
 
-	if (factorType == Datatype.STRING && otherTermType == Datatype.INT && operatorType == TokenType.TIMES) {
+	if (powerTermType == Datatype.STRING && otherTermType == Datatype.INT && operatorType == TokenType.TIMES) {
 	    String result = "";
 	    for (int i = 0; i < otherTerm.getIntValue(); i++) {
-		result += factor.getStringValue();
+		result += powerTerm.getStringValue();
 	    }
 	    return new Lexeme(TokenType.STRING, result, factor.getLineNumber());
-	} else if (factorType == Datatype.INT && otherTermType == Datatype.STRING && operatorType == TokenType.TIMES) {
+	} else if (powerTermType == Datatype.INT && otherTermType == Datatype.STRING && operatorType == TokenType.TIMES) {
 	    String result = "";
-	    for (int i = 0; i < factor.getIntValue(); i++) {
+	    for (int i = 0; i < powerTerm.getIntValue(); i++) {
 		result += otherTerm.getStringValue();
 	    }
 	    return new Lexeme(TokenType.STRING, result, factor.getLineNumber());
-	} else if (factorType == Datatype.FLOAT || otherTermType == Datatype.FLOAT) {
+	} else if (powerTermType == Datatype.FLOAT || otherTermType == Datatype.FLOAT) {
 	    if (operatorType == TokenType.TIMES) {
-		return new Lexeme(TokenType.FLOAT, factor.getFloatValue() * otherTerm.getFloatValue(), factor.getLineNumber());
+		return new Lexeme(TokenType.FLOAT, powerTerm.getFloatValue() * otherTerm.getFloatValue(), factor.getLineNumber());
 	    } else if (operatorType == TokenType.DIVIDE) {
-		return new Lexeme(TokenType.FLOAT, factor.getFloatValue() / otherTerm.getFloatValue(), factor.getLineNumber());
+		return new Lexeme(TokenType.FLOAT, powerTerm.getFloatValue() / otherTerm.getFloatValue(), factor.getLineNumber());
 	    } else {		// MOD
-		return new Lexeme(TokenType.FLOAT, factor.getFloatValue() % otherTerm.getFloatValue(), factor.getLineNumber());
+		return new Lexeme(TokenType.FLOAT, powerTerm.getFloatValue() % otherTerm.getFloatValue(), factor.getLineNumber());
 	    }
-	} else if (factorType == Datatype.INT && otherTermType == Datatype.INT) {
+	} else if (powerTermType == Datatype.INT && otherTermType == Datatype.INT) {
 	    if (operatorType == TokenType.TIMES) {
-		return new Lexeme(TokenType.INT, factor.getIntValue() * otherTerm.getIntValue(), factor.getLineNumber());
+		return new Lexeme(TokenType.INT, powerTerm.getIntValue() * otherTerm.getIntValue(), factor.getLineNumber());
 	    } else if (operatorType == TokenType.DIVIDE) {
-		return new Lexeme(TokenType.INT, factor.getIntValue() / otherTerm.getIntValue(), factor.getLineNumber());
+		return new Lexeme(TokenType.INT, powerTerm.getIntValue() / otherTerm.getIntValue(), factor.getLineNumber());
 	    } else {		// MOD
-		return new Lexeme(TokenType.INT, factor.getIntValue() % otherTerm.getIntValue(), factor.getLineNumber());
+		return new Lexeme(TokenType.INT, powerTerm.getIntValue() % otherTerm.getIntValue(), factor.getLineNumber());
 	    }
 	}
-	Z.error(factor.getLeft(), "Incompatible Types. Can't perform " + operatorType + " operation on operands of type " 
-		+ factorType + " and " + otherTermType);
+	Z.error(factor, "Incompatible Types. Can't perform " + operatorType + " operation on operands of type " 
+		+ powerTermType + " and " + otherTermType);
 	return new Lexeme(TokenType.INT, 0, factor.getLineNumber());
     }
 
@@ -503,15 +502,15 @@ public class Evaluator {
 	
 	Lexeme otherTerm = evalPowerTerm(powerTerm.getRight().getRight(), environment);
 	TokenType operatorType = powerTerm.getRight().getLeft().getType();
-	final Datatype powerTermType = powerTerm.getDatatype();
+	final Datatype unaryTermType = unaryTerm.getDatatype();
 	final Datatype otherTermType = otherTerm.getDatatype();
-	if (powerTermType == null || otherTermType == null
-		|| powerTermType == Datatype.STRING || otherTermType == Datatype.STRING) {
-	   Z.error(powerTerm.getLineNumber(), "Incompatible datatypes"); 
+	if (unaryTermType == null || otherTermType == null
+		|| unaryTermType == Datatype.STRING || otherTermType == Datatype.STRING) {
+	   Z.error(powerTerm, "Incompatible datatypes"); 
 	   return new Lexeme(TokenType.INT, 0, powerTerm.getLineNumber());
 	}
 	double result = Math.pow(unaryTerm.getFloatValue(), otherTerm.getFloatValue());
-	if (powerTermType == Datatype.INT && otherTermType == Datatype.INT) {
+	if (unaryTermType == Datatype.INT && otherTermType == Datatype.INT) {
 	    return new Lexeme(TokenType.INT, (int) result, powerTerm.getLineNumber());
 	} else { 	// at least one is a FLOAT
 	    return new Lexeme(TokenType.FLOAT, (float) result, powerTerm.getLineNumber());

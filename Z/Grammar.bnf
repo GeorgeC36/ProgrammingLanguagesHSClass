@@ -13,10 +13,9 @@ statement ::= functionCall
         | conditional
         | inputStatement
         | outputStatement
+        | returnStatement
 
-//expression ::= primary
-//		| unary
-//		| binary
+returnStatement ::= "return" expression
 
 expressionList ::= expression
                 | expression "," expressionList

@@ -54,6 +54,7 @@ public class Lexer {
         
         keywords.put("input", TokenType.INPUT);
         keywords.put("output", TokenType.OUTPUT);
+        keywords.put("return", TokenType.RETURN);
     }
 
     // Lexer

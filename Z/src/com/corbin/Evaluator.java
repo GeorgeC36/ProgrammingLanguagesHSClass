@@ -86,8 +86,10 @@ public class Evaluator {
 	if (debug) System.out.println("Evaluating StatementList...");
 	Lexeme result = null;
 	while (statementList != null) {
-	    if (statementList.getLeft() != null) {
-		result = evalStatement(statementList.getLeft(), environment);
+	    final Lexeme statement = statementList.getLeft();
+	    if (statement != null) {
+		result = evalStatement(statement, environment);
+		if (statement.getType() == TokenType.RETURN) break;		// exit the statement list
 	    }
 	    statementList = statementList.getRight();
 	}
@@ -115,9 +117,14 @@ public class Evaluator {
 	    return evalLoop(statement, environment);
 	case OUTPUT_STATEMENT:
 	    return evalOutputStatement(statement, environment);
+	case RETURN:
+	    return evalReturnStatement(statement, environment);
 	}
-
 	return null;
+    }
+
+    private Lexeme evalReturnStatement(Lexeme statement, Environments environment) {
+	return evalExpression(statement.getLeft(), environment);
     }
 
     private Lexeme evalAssignment(Lexeme assignment, Environments environment) {
@@ -156,8 +163,8 @@ public class Evaluator {
 	return evalStatementList(node, environment);
     }
 
-    private Lexeme evalFunctionDefinition(Lexeme statement, Environments environment) {
-	// TODO Auto-generated method stub
+    private Lexeme evalFunctionDefinition(Lexeme functionDefinition, Environments environment) {
+	environment.insert(functionDefinition.getLeft(), functionDefinition.getRight());
 	return null;
     }
 
@@ -609,9 +616,42 @@ public class Evaluator {
 	}
     }
 
-    private Lexeme evalFunctionCall(Lexeme functionCall, Environments environment) {
-	Z.error(functionCall, "Function call TBD");
-	return new Lexeme(TokenType.INT, 0, functionCall.getLineNumber());
+    private Lexeme evalFunctionCall(Lexeme functionCall, Environments parentEnvironment) {
+	Environments environment = new Environments(parentEnvironment);
+	Lexeme functionBody = environment.lookUp(functionCall.getLeft().getLeft());
+	
+	Lexeme argumentList = functionCall.getRight().getLeft();
+	Lexeme parameterList = functionBody.getLeft();
+	
+	Lexeme returnType = functionBody.getRight().getLeft();
+	
+	// really should evaluate all arguments before adding parameters to the environment
+	while (argumentList != null && parameterList != null) {
+	    Lexeme arg = evalExpression(argumentList.getRight().getLeft(), environment);
+	    Lexeme param = parameterList.getLeft().getLeft();
+	    environment.insert(param, arg);
+	    argumentList = argumentList.getRight().getRight();
+	    if (argumentList != null) argumentList = argumentList.getRight();
+	    parameterList = parameterList.getRight();
+	    if (parameterList != null) parameterList = parameterList.getRight();
+	}
+	if (argumentList != null) Z.error(argumentList, "Too many arguments");
+	if (parameterList != null) Z.error(functionCall, "Not enough arguments");
+
+	Lexeme result = evalStatementList(functionBody.getRight().getRight(), environment);
+	if (returnType == null || returnType.getType() == TokenType.VOID) {
+	    return null;
+	} else {
+	    switch (returnType.getType()) {
+	    case KW_STRING:
+		return new Lexeme(TokenType.STRING, result.getStringValue(), functionCall.getLineNumber());
+	    case KW_FLOAT:
+		return new Lexeme(TokenType.FLOAT, result.getFloatValue(), functionCall.getLineNumber());
+	    case KW_INT:
+		return new Lexeme(TokenType.INT, result.getIntValue(), functionCall.getLineNumber());
+	    }
+	}
+	return null;
     }
 
     private Lexeme evalGrouping(Lexeme grouping, Environments environment) {

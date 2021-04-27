@@ -83,7 +83,14 @@ public class Parser {
         else if (loopPending()) return loop();
         else if (inputStatementPending()) return inputStatement();
         else if (outputStatementPending()) return outputStatement();
+        else if (returnStatementPending()) return returnStatement();
         else return conditional();
+    }
+
+    private Lexeme returnStatement() {
+	Lexeme ret = consume(RETURN);
+	ret.setLeft(expression());
+	return ret;
     }
 
     private Lexeme conditional() {
@@ -347,34 +354,25 @@ public class Parser {
 
     private Lexeme functionDefinition() {
         Lexeme functionDefinition = new Lexeme(FUNCTION_DEFINITION, currentLexeme.getLineNumber());
-        Lexeme func = consume(FUNC);
-        Lexeme identifier = consume(IDENTIFIER);
+        consume(FUNC);
+        functionDefinition.setLeft(consume(IDENTIFIER));
+        Lexeme functionBody = new Lexeme(TokenType.FUNCTION_BODY, currentLexeme.getLineNumber());
+        functionDefinition.setRight(functionBody);
+        
+        consume(OPENPAREN);
+        if (functionParameterListPending()) functionBody.setLeft(functionParameterList());
+        consume(CLOSEPAREN);
 
-        functionDefinition.setLeft(identifier);
-        identifier.setLeft(func);
-        identifier.setRight(consume(OPENPAREN));
-
-        Lexeme glue1 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        functionDefinition.setRight(glue1);
-
-        if (functionParameterListPending()) glue1.setLeft(functionParameterList());
-        Lexeme endDef = consume(CLOSEPAREN);
-        glue1.setRight(endDef);
+        Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
+        functionBody.setRight(glue);        
         if (check(RETURNS)) {
-            Lexeme glue2 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-            endDef.setLeft(glue2);
-            glue2.setLeft(consume(RETURNS));
-            glue2.setRight(functionReturnType());
+            consume(RETURNS);
+            glue.setLeft(functionReturnType());
         }
 
-        Lexeme glue3 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        endDef.setRight(glue3);
-        glue3.setLeft(consume(OPENBRACE));
-        Lexeme glue4 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        glue3.setRight(glue4);
-
-        glue4.setLeft(statementList());
-        glue4.setRight(consume(CLOSEBRACE));
+        consume(OPENBRACE);
+        glue.setRight(statementList());
+        consume(CLOSEBRACE);
 
         return functionDefinition;
     }
@@ -820,7 +818,8 @@ public class Parser {
                 || loopPending()
                 || inputStatementPending()
                 || outputStatementPending()
-                || conditionalPending();
+                || conditionalPending()
+        	|| returnStatementPending();
     }
 
     private boolean conditionalPending() {
@@ -1037,6 +1036,9 @@ public class Parser {
                 || check(FALSE);
     }
 
+    private boolean returnStatementPending() {
+	return check(RETURN);
+    }
 
     public static void printTree(Lexeme root) {
         String printableTree = getPrintableTree(root, 1);

@@ -1,14 +1,22 @@
 // Functions
 
-func greet(person: String) -> String {
-}
-greet("George")
+// func greet(first: String, last: String) -> String {
+//   output "Hello " + first + " " + last
+// }
+// 
+// greet("George", "Corbin")
+// 
+// func print() {
+//   output "In function"
+// }
+// 
+// print()
 
-func bye(number: int) {
-  var a = 3
+func ifunc() -> int {
+  output "before"
+  return 5
+  output "after"
 }
-bye(8)
 
-func getName() {
-}
-getName()
+output ifunc()
+output "Done"

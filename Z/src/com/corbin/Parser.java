@@ -156,70 +156,45 @@ public class Parser {
 
     private Lexeme ifElseStatements() {
         Lexeme ifElseStatements = new Lexeme(IF_ELSE_STATEMENTS, currentLexeme.getLineNumber());
-        Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
-
         ifElseStatements.setLeft(ifStatement());
-        ifElseStatements.setRight(glue);
-        if (elseIfStatementPending()) glue.setLeft(elseIfStatement());
-        if (elseStatementPending()) glue.setRight(elseStatement());
 
+        Lexeme node = ifElseStatements;
+        while (elseIfStatementPending()) {
+            Lexeme glue = new Lexeme(GLUE, currentLexeme.getLineNumber());
+            node.setRight(glue);
+            node = glue;
+            node.setLeft(elseIfStatement());
+        }
+
+        if (elseStatementPending()) node.setRight(elseStatement());
         return ifElseStatements;
     }
 
     private Lexeme elseStatement() {
-        Lexeme elseStatement = new Lexeme(ELSE_STATEMENT, currentLexeme.getLineNumber());
-
-        elseStatement.setLeft(consume(ELSE));
-
-        Lexeme glue1 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        elseStatement.setRight(glue1);
-        glue1.setLeft(consume(OPENBRACE));
-        Lexeme glue2 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        glue1.setRight(glue2);
-
-        glue2.setLeft(statementList());
-        glue2.setRight(consume(CLOSEBRACE));
-
-        return elseStatement;
+        consume(ELSE);
+        consume(OPENBRACE);
+        Lexeme statementList = statementList();
+        consume(CLOSEBRACE);
+        return statementList;
     }
 
     private Lexeme elseIfStatement() {
-        Lexeme elseIfStatement = new Lexeme(ELSE_IF_STATEMENT, currentLexeme.getLineNumber());
-        elseIfStatement.setLeft(consume(ELSE));
-        elseIfStatement.setRight(ifStatement());
-
-        return elseIfStatement;
+        consume(ELSE);
+        return ifStatement();
     }
 
     private Lexeme ifStatement() {
         Lexeme ifStatement = new Lexeme(IF_STATEMENT, currentLexeme.getLineNumber());
-        Lexeme glue0 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        Lexeme glue1 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        Lexeme glue2 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-
-        ifStatement.setLeft(glue0);
-        glue0.setLeft(consume(IF));
-        glue0.setRight(glue1);
-
-        boolean parens = false;
-        if (check(OPENPAREN)) {
-            glue1.setLeft(consume(OPENPAREN));
-            parens = true;
-        }
-        glue1.setRight(glue2);
-        glue2.setLeft(expression());
-        if (parens) {
-            glue2.setRight(consume(CLOSEPAREN));
-        }
-
-        Lexeme glue3 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        ifStatement.setRight(glue3);
-        glue3.setLeft(consume(OPENBRACE));
-        Lexeme glue4 = new Lexeme(GLUE, currentLexeme.getLineNumber());
-        glue4.setRight(glue4);
-
-        glue4.setLeft(statementList());
-        glue4.setRight(consume(CLOSEBRACE));
+        consume(IF);
+        
+        boolean parens = check(OPENPAREN);
+        if (parens) consume(OPENPAREN);       
+        ifStatement.setLeft(expression());
+        if (parens) consume(CLOSEPAREN);
+      
+        consume(OPENBRACE);
+        ifStatement.setRight(statementList());
+        consume(CLOSEBRACE);
 
         return ifStatement;
     }

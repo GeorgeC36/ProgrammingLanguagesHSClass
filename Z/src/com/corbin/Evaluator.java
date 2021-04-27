@@ -99,8 +99,8 @@ public class Evaluator {
 	switch (statement.getType()) {
 	case ASSIGNMENT:
 	    return evalAssignment(statement, environment);
-	case CONDITIONAL:
-	    return evalConditional(statement, environment);
+	case IF_ELSE_STATEMENTS:
+	    return evalIfElseStatements(statement, environment);
 	case FUNCTION_CALL:
 	    return evalFunctionCall(statement, environment);
 	case FUNCTION_DEFINITION:
@@ -142,9 +142,18 @@ public class Evaluator {
 	return result;
     }
 
-    private Lexeme evalConditional(Lexeme statement, Environments environment) {
-	// TODO Auto-generated method stub
-	return null;
+    private Lexeme evalIfElseStatements(Lexeme ifElseStatements, Environments parentEnvironment) {
+	Environments environment = new Environments(parentEnvironment);
+	Lexeme node = ifElseStatements;
+	while (node != null && node.getType() != TokenType.STATEMENT_LIST) {
+	    Lexeme ifStatement = node.getLeft();
+	    Lexeme expression = ifStatement.getLeft();
+	    if (evalExpression(expression, environment).getBooleanValue()) {
+		return evalStatementList(ifStatement.getRight(), environment);  // all done as soon as one is true
+	    }
+	    node = node.getRight();
+	}
+	return evalStatementList(node, environment);
     }
 
     private Lexeme evalFunctionDefinition(Lexeme statement, Environments environment) {
@@ -372,16 +381,16 @@ public class Evaluator {
 	Lexeme relationalTerm = evalRelationalTerm(equalityTerm.getLeft(), environment);
 	if (equalityTerm.getRight() == null) return relationalTerm;	// no operator
 	
-	Lexeme otherTerm = evalRelationalTerm(equalityTerm.getRight().getRight(), environment);
+	Lexeme otherTerm = evalEqualityTerm(equalityTerm.getRight().getRight(), environment);
 	TokenType operatorType = equalityTerm.getRight().getLeft().getType();
 	if (relationalTerm.getDatatype() == Datatype.STRING || otherTerm.getDatatype() == Datatype.STRING) {
-	    if (operatorType == TokenType.EQUAL &&  relationalTerm.getStringValue().equals(otherTerm.getStringValue())
-		                                || !relationalTerm.getStringValue().equals(otherTerm.getStringValue())) {
+	    if (operatorType == TokenType.EQUAL    &&  relationalTerm.getStringValue().equals(otherTerm.getStringValue()) 
+             || operatorType == TokenType.NOTEQUAL && !relationalTerm.getStringValue().equals(otherTerm.getStringValue())) {
 		return new Lexeme(TokenType.TRUE, relationalTerm.getLineNumber());
 	    }
 	} else {	// INTs can be compared as FLOATs
-	    if (operatorType == TokenType.EQUAL && relationalTerm.getFloatValue() == otherTerm.getFloatValue()
-		                                || relationalTerm.getFloatValue() != otherTerm.getFloatValue()) {
+	    if (operatorType == TokenType.EQUAL    &&  relationalTerm.getFloatValue().equals(otherTerm.getFloatValue())
+	     || operatorType == TokenType.NOTEQUAL && !relationalTerm.getFloatValue().equals(otherTerm.getFloatValue())) {
 		return new Lexeme(TokenType.TRUE, relationalTerm.getLineNumber());
 	    }
 	}
@@ -402,10 +411,10 @@ public class Evaluator {
 		return new Lexeme(TokenType.TRUE, relationalTerm.getLineNumber());
 	    }
 	} else {	// INTs can be compared as FLOATs
-	    if (       operatorType == TokenType.GREATER      && term.getFloatValue() >  otherTerm.getFloatValue()
-		    || operatorType == TokenType.GREATEREQUAL && term.getFloatValue() >= otherTerm.getFloatValue()
-		    || operatorType == TokenType.LESS         && term.getFloatValue() <  otherTerm.getFloatValue()
-		    || operatorType == TokenType.LESSEQUAL    && term.getFloatValue() <= otherTerm.getFloatValue()) {
+	    if (       operatorType == TokenType.GREATER      && term.getFloatValue().compareTo(otherTerm.getFloatValue()) >  0
+		    || operatorType == TokenType.GREATEREQUAL && term.getFloatValue().compareTo(otherTerm.getFloatValue()) >= 0
+		    || operatorType == TokenType.LESS         && term.getFloatValue().compareTo(otherTerm.getFloatValue()) <  0
+		    || operatorType == TokenType.LESSEQUAL    && term.getFloatValue().compareTo(otherTerm.getFloatValue()) <= 0) {
 		return new Lexeme(TokenType.TRUE, relationalTerm.getLineNumber());
 	    }
 	}

@@ -1,14 +1,14 @@
 // Conditionals
 
-if (x > z) {
-} else if y {
-} else {
-}
+var a=0
+var b=2
 
-if (y > z) {
-  a++
-} else if y {
-  b--
+if (a > b) {
+  output "GREATER " + a
+} else if (a == b) {
+  output "EQUAL"
+} else if a == 0 {
+  output "ZERO"
 } else {
-  c = 7
+  output "LESS " + a
 }

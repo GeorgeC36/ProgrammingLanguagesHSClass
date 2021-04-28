@@ -755,7 +755,7 @@ public class Parser {
     private Lexeme argumentList() {
         Lexeme argumentList = new Lexeme(ARGUMENT_LIST, currentLexeme.getLineNumber());
 
-        if (check(IDENTIFIER)) {
+        if (check(IDENTIFIER) && checkNext(COLON)) {
             Lexeme glue1 = new Lexeme(GLUE, currentLexeme.getLineNumber());
             argumentList.setLeft(glue1);
             glue1.setLeft(consume(IDENTIFIER));

@@ -1,0 +1,54 @@
+// Initializations
+
+var iVar = 5
+var sVar = "Hello, World!"
+var fVar = 3.14159
+
+output "String multiplication"
+output sVar * iVar
+output ""
+
+// Functions
+
+func avg (x: float, y: float) -> float {
+  return (x + y) / 2.0
+}
+
+output "The average of 5 and pi is " + avg(5.0, fVar)
+
+output ""
+output "Scope Test, for loop"
+output "iVar=" + iVar
+output "sVar=" + sVar
+output "fVar=" + fVar
+
+for iVar in 1...3 {  // iVar is local to the for loop
+  var sVar = "local"
+  fVar = fVar + iVar		// mixed type addition; fVar is global
+  output "  Inside the for loop"
+  output "  iVar=" + iVar
+  output "  sVar=" + sVar
+  output "  fVar=" + fVar
+  output ""
+}
+output "After the for loop - only fVar changed"
+output "iVar=" + iVar
+output "sVar=" + sVar
+output "fVar=" + fVar
+  
+
+// Conditionals
+output ""
+output "for while, if, else if, else, boolean logic, comparison"
+for (i = 1; i <= 4; i++) {
+  var j = 0
+  while ++j <= 4 {
+    if i < j or i == 3 {
+      output "i=" + i + "  j=" + j + "      i < j or i == 3"
+    } else if i == 2 and j == 1 {
+      output "i=" + i + "  j=" + j + "      i == 2 and j == 1"
+    } else {
+      output "i=" + i + "  j=" + j + "      other"
+    }
+  }
+}

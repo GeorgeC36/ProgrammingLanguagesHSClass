@@ -42,6 +42,7 @@ public class Z {
 
         Environments globalEnvironment = new Environments(null);
         Evaluator evaluator = new Evaluator();
+        System.out.println("============== Begin Evaluation ==============");
         Lexeme programResult = evaluator.eval(program, globalEnvironment);
 
         System.out.println("Program result: " + programResult);
